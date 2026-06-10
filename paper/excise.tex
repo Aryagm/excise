@@ -167,7 +167,7 @@ masks that only correlate with behavior.
 
 All experiments ran on one RTX 4090 (\$0.40/hr); the complete set below
 consumed under \$5. Code, configs, and receipts:
-\texttt{github.com/e3group/excise}.
+\texttt{github.com/Aryagm/excise}.
 
 \subsection{Arithmetic: surpassing the staged pipeline on its benchmark}
 
@@ -259,6 +259,26 @@ channels on the 8B sibling model, and their best staged collimator (with a
 curated, schema-validated gold corpus and a multi-run objective search)
 reached 84.6\%; metric and model-size differences make this directional
 context, not a head-to-head (\S\ref{sec:honest}).
+
+\subsection{Breadth: other architectures and capabilities}
+
+To test that the method is a tool rather than a Qwen-arithmetic demo, we ran
+the \emph{released library} (not the research scripts) on two further
+settings. \textbf{SmolLM2-1.7B} \citep{smollm2} (Llama architecture):
+few-shot 2-digit addition extracts to a 7.4\% floor at 97.2\% held-out
+verbatim self-match; sliced 1.75B $\to$ 0.59B (3.0$\times$); all receipts
+clean. \textbf{JSON extraction} (Qwen2.5-1.5B-Instruct, chat-formatted
+prompts): a broader capability that floors at 33.9\% of channels with
+90.0\% held-out self-match; sliced 1.58B $\to$ 0.78B. The JSON run also
+exercised the receipts as designed: its report flagged unmasked-model drift
+(55.8\% self-match against an expected ${\approx}100\%$)---the adapter
+over-specialized to the masked configuration during the polish phase, which
+trains without the guardrail term. The masked and sliced artifacts are
+unaffected, but the flag is genuine signal and the fix (guardrail in
+polish) is mechanical. Capability breadth tracks substrate size across all
+four settings: narrow skills compress to single-digit percentages, broad
+structured-generation capabilities need a third to half the channels,
+consistent with PRISM's cross-task observations.
 
 \subsection{Physical export: slicing is masking}\label{sec:slice}
 

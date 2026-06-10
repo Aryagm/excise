@@ -22,10 +22,18 @@ network can then be deleted.
 
 Measured results (single RTX 4090, details in the paper):
 
-| Capability | Model | Kept channels | Fidelity | Exported size |
+| Capability | Model (architecture) | Kept channels | Fidelity | Exported size |
 |---|---|---|---|---|
-| 2-digit arithmetic | Qwen2.5-Math-1.5B | **2.9%** of MLP | 97% of base accuracy | **1.54B → 0.42B params (3.7×)** |
-| Function calling (BFCL) | Qwen3-4B | 40% of MLP | ~76% verbatim output match | 4.0B → ~2.4B projected |
+| 2-digit arithmetic | Qwen2.5-Math-1.5B (Qwen2) | **2.9%** of MLP | 97% of base accuracy | **1.54B → 0.42B (3.7×)** |
+| Arithmetic, few-shot | SmolLM2-1.7B (Llama) | 7.4% of MLP | 97.2% verbatim match | 1.75B → 0.59B (3.0×) |
+| JSON extraction | Qwen2.5-1.5B-Instruct (Qwen2) | 33.9% of MLP | 90.0% verbatim match | 1.58B → 0.78B (2.0×) |
+| Function calling (BFCL) | Qwen3-4B (Qwen3) | 40% of MLP | ~76% verbatim match | 4.0B → ~2.4B projected |
+
+The JSON row also shows the receipts doing their job: its report flagged
+unmasked-model drift (55.8% self-match where ~100% is expected) — the
+adapter over-specialized to the masked configuration during polish. The
+masked/sliced artifact is unaffected (90% fidelity), but the flag is real
+signal; a guardrail-in-polish fix is tracked for v0.2.
 
 - **Label-free.** The target is the model's own unmasked output distribution.
   You provide prompts; nothing else.
@@ -61,7 +69,7 @@ Measured results (single RTX 4090, details in the paper):
 
 ```bash
 pip install excise          # PyPI release pending; for now:
-pip install git+https://github.com/e3group/excise
+pip install git+https://github.com/Aryagm/excise
 ```
 
 ## CLI

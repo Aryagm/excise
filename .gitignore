@@ -4,3 +4,4 @@ __pycache__/
 .venv/
 .pytest_cache/
 vast_test/*.log
+vast_test/library_runs/*/adapter/

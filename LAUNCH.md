@@ -5,7 +5,7 @@ publishing — things only you can/should do).
 
 ## Repo
 
-- ☐ Create the GitHub repo (paper + README reference `github.com/e3group/excise`;
+- ☐ Create the GitHub repo (paper + README reference `github.com/Aryagm/excise`;
   edit both if the org/name differs) and `git push`.
 - ☐ Confirm the package name `excise` (PyPI name is free as of 2026-06-09).
   Renaming = `pyproject.toml`, `src/excise/`, README, paper, this file.

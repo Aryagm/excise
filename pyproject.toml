@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/e3group/excise"
+Repository = "https://github.com/Aryagm/excise"
 
 [project.scripts]
 excise = "excise.cli:main"
