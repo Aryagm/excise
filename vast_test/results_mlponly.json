@@ -1,0 +1,30 @@
+{
+  "name": "mlponly",
+  "seed": 42,
+  "config": {
+    "ce_weight": 0.05,
+    "lora_scope": "mlp",
+    "layer_gates": false
+  },
+  "base_acc": 0.9740740740740741,
+  "floor_frac": 0.03179604187607765,
+  "floor_reason": "probe",
+  "steps_used": 3000,
+  "evals": {
+    "0.0500": {
+      "acc": 0.9481481481481482,
+      "recovery": 0.973384030418251
+    },
+    "0.0318": {
+      "acc": 0.9308641975308642,
+      "recovery": 0.9556400506970849
+    },
+    "0.0300": {
+      "acc": 0.9234567901234568,
+      "recovery": 0.9480354879594424
+    }
+  },
+  "unmasked_acc": 0.9666666666666667,
+  "layers_open": 28,
+  "wall_minutes": 8.624554550647735
+}

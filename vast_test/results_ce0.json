@@ -1,0 +1,30 @@
+{
+  "name": "ce0",
+  "seed": 42,
+  "config": {
+    "ce_weight": 0.0,
+    "lora_scope": "all",
+    "layer_gates": false
+  },
+  "base_acc": 0.9740740740740741,
+  "floor_frac": 0.052688464522361755,
+  "floor_reason": "probe",
+  "steps_used": 2250,
+  "evals": {
+    "0.0527": {
+      "acc": 0.9419753086419753,
+      "recovery": 0.9670468948035488
+    },
+    "0.0500": {
+      "acc": 0.9419753086419753,
+      "recovery": 0.9670468948035488
+    },
+    "0.0300": {
+      "acc": 0.7518518518518519,
+      "recovery": 0.7718631178707225
+    }
+  },
+  "unmasked_acc": 0.9753086419753086,
+  "layers_open": 28,
+  "wall_minutes": 9.464671031634014
+}

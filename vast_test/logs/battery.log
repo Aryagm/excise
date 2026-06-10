@@ -1,0 +1,246 @@
+=== RUN: --name s42 --seed 42 ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 5864.95it/s]
+[setup] s42 seed=42 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9914 layer_gates=False
+[probe] base=0.9766 on 128 train pairs
+[train] step=100 kl=0.0046 ema=0.0063 open=0.9907 target=0.9914 lam=0.00
+[train] step=200 kl=0.0026 ema=0.0042 open=0.9851 target=0.9307 lam=0.51
+[train] step=300 kl=0.0040 ema=0.0039 open=0.9367 target=0.8860 lam=1.04
+[train] step=400 kl=0.0042 ema=0.0123 open=0.8429 target=0.7918 lam=1.57
+[train] step=500 kl=0.0056 ema=0.0045 open=0.7335 target=0.6832 lam=2.10
+[train] step=600 kl=0.0072 ema=0.0051 open=0.6197 target=0.5692 lam=2.62
+[train] step=700 kl=0.0054 ema=0.0055 open=0.5184 target=0.4675 lam=3.14
+[train] step=800 kl=0.0047 ema=0.0057 open=0.4325 target=0.3814 lam=3.65
+[train] step=900 kl=0.0094 ema=0.0065 open=0.3610 target=0.3089 lam=4.16
+[train] step=1000 kl=0.0053 ema=0.0067 open=0.3085 target=0.2573 lam=4.67
+[train] step=1100 kl=0.0046 ema=0.0054 open=0.2612 target=0.2099 lam=5.18
+[train] step=1200 kl=0.0072 ema=0.0062 open=0.2262 target=0.1761 lam=5.68
+[train] step=1300 kl=0.0057 ema=0.0063 open=0.1944 target=0.1436 lam=6.19
+[train] step=1400 kl=0.0043 ema=0.0059 open=0.1667 target=0.1163 lam=6.69
+[train] step=1500 kl=0.0042 ema=0.0066 open=0.1430 target=0.0929 lam=7.19
+[train] step=1600 kl=0.0062 ema=0.0990 open=0.1232 target=0.0732 lam=7.70
+[probe] step=1650 open=0.1159 acc=0.9688 (base 0.9766) dry=0
+[train] step=1700 kl=0.0081 ema=0.0062 open=0.1086 target=0.0585 lam=8.20
+[train] step=1800 kl=0.0047 ema=0.0062 open=0.0952 target=0.0451 lam=8.70
+[probe] step=1800 open=0.0952 acc=0.9844 (base 0.9766) dry=0
+[train] step=1900 kl=0.0057 ema=0.0072 open=0.0839 target=0.0338 lam=9.19
+[probe] step=1950 open=0.0787 acc=0.9922 (base 0.9766) dry=0
+[train] step=2000 kl=0.0046 ema=0.0056 open=0.0737 target=0.0236 lam=9.69
+[train] step=2100 kl=0.0059 ema=0.0055 open=0.0649 target=0.0149 lam=10.19
+[probe] step=2100 open=0.0649 acc=0.9688 (base 0.9766) dry=0
+[train] step=2200 kl=0.0044 ema=0.0054 open=0.0572 target=0.0080 lam=10.69
+[probe] step=2250 open=0.0542 acc=1.0000 (base 0.9766) dry=0
+[train] step=2300 kl=0.0057 ema=0.0060 open=0.0514 target=0.0080 lam=11.15
+[train] step=2400 kl=0.0067 ema=0.0063 open=0.0462 target=0.0080 lam=11.56
+[probe] step=2400 open=0.0462 acc=0.9297 (base 0.9766) dry=1
+[train] step=2500 kl=0.0044 ema=0.0055 open=0.0415 target=0.0080 lam=11.92
+[probe] step=2550 open=0.0394 acc=0.9609 (base 0.9766) dry=0
+[train] step=2600 kl=0.0047 ema=0.0053 open=0.0374 target=0.0080 lam=12.23
+[train] step=2700 kl=0.0037 ema=0.0046 open=0.0337 target=0.0080 lam=12.51
+[probe] step=2700 open=0.0337 acc=0.9453 (base 0.9766) dry=1
+[train] step=2800 kl=0.0039 ema=0.0047 open=0.0307 target=0.0080 lam=12.75
+[probe] step=2850 open=0.0294 acc=0.9453 (base 0.9766) dry=2
+[floor] probe floor at step 2850 open=0.0294
+[polish] 150 steps at floor=0.0294 (k=7368)
+[eval@5.00%] acc=0.9827 recovery=1.0089
+[eval@3.00%] acc=0.9444 recovery=0.9696
+[eval@2.94%] acc=0.9469 recovery=0.9721
+[guardrail] unmasked acc=0.9741 (base 0.9741); layers open 28/28
+[done] s42: 12.0 min
+=== DONE: --name s42 --seed 42 (exit 0) ===
+=== RUN: --name s43 --seed 43 ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 6538.13it/s]
+[setup] s43 seed=43 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9914 layer_gates=False
+[probe] base=0.9766 on 128 train pairs
+[train] step=100 kl=0.0035 ema=0.0072 open=0.9906 target=0.9914 lam=0.00
+[train] step=200 kl=0.0036 ema=0.0053 open=0.9847 target=0.9307 lam=0.51
+[train] step=300 kl=0.0027 ema=0.0156 open=0.9318 target=0.8798 lam=1.03
+[train] step=400 kl=0.0032 ema=0.0035 open=0.8353 target=0.7808 lam=1.56
+[train] step=500 kl=0.0068 ema=0.0048 open=0.7173 target=0.6643 lam=2.09
+[train] step=600 kl=0.0047 ema=0.0051 open=0.6022 target=0.5495 lam=2.61
+[train] step=700 kl=0.0044 ema=0.0055 open=0.5007 target=0.4482 lam=3.13
+[train] step=800 kl=0.0064 ema=0.0056 open=0.4153 target=0.3631 lam=3.64
+[train] step=900 kl=0.0050 ema=0.0058 open=0.3446 target=0.2941 lam=4.15
+[train] step=1000 kl=0.0057 ema=0.0057 open=0.2872 target=0.2365 lam=4.66
+[train] step=1100 kl=0.0058 ema=0.0061 open=0.2404 target=0.1902 lam=5.17
+[train] step=1200 kl=0.0056 ema=0.0055 open=0.2028 target=0.1519 lam=5.67
+[train] step=1300 kl=0.0076 ema=0.0058 open=0.1721 target=0.1214 lam=6.18
+[train] step=1400 kl=0.0055 ema=0.0057 open=0.1457 target=0.0956 lam=6.68
+[train] step=1500 kl=0.0043 ema=0.0074 open=0.1250 target=0.0747 lam=7.19
+[train] step=1600 kl=0.0057 ema=0.0067 open=0.1077 target=0.0576 lam=7.69
+[probe] step=1650 open=0.1000 acc=0.9297 (base 0.9766) dry=1
+[train] step=1700 kl=0.0052 ema=0.0067 open=0.0940 target=0.0438 lam=8.19
+[train] step=1800 kl=0.0062 ema=0.0070 open=0.0821 target=0.0319 lam=8.69
+[probe] step=1800 open=0.0821 acc=0.9766 (base 0.9766) dry=0
+[train] step=1900 kl=0.0068 ema=0.0056 open=0.0720 target=0.0220 lam=9.19
+[probe] step=1950 open=0.0673 acc=0.9766 (base 0.9766) dry=0
+[train] step=2000 kl=0.0041 ema=0.0049 open=0.0630 target=0.0129 lam=9.69
+[train] step=2100 kl=0.0044 ema=0.0049 open=0.0550 target=0.0080 lam=10.18
+[probe] step=2100 open=0.0550 acc=0.9844 (base 0.9766) dry=0
+[train] step=2200 kl=0.0057 ema=0.0050 open=0.0485 target=0.0080 lam=10.62
+[probe] step=2250 open=0.0455 acc=0.9297 (base 0.9766) dry=1
+[train] step=2300 kl=0.0046 ema=0.0050 open=0.0429 target=0.0080 lam=11.00
+[train] step=2400 kl=0.0051 ema=0.0048 open=0.0383 target=0.0080 lam=11.32
+[probe] step=2400 open=0.0383 acc=0.8906 (base 0.9766) dry=2
+[floor] probe floor at step 2400 open=0.0383
+[polish] 150 steps at floor=0.0383 (k=9619)
+[eval@5.00%] acc=0.9778 recovery=1.0038
+[eval@3.83%] acc=0.9296 recovery=0.9544
+[eval@3.00%] acc=0.8704 recovery=0.8935
+[guardrail] unmasked acc=0.9691 (base 0.9741); layers open 28/28
+[done] s43: 10.0 min
+=== DONE: --name s43 --seed 43 (exit 0) ===
+=== RUN: --name s44 --seed 44 ===
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 6686.07it/s]
+[setup] s44 seed=44 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9914 layer_gates=False
+[probe] base=0.9766 on 128 train pairs
+[train] step=100 kl=0.0061 ema=0.0087 open=0.9907 target=0.9914 lam=0.00
+[train] step=200 kl=0.0104 ema=0.0050 open=0.9843 target=0.9307 lam=0.51
+[train] step=300 kl=0.0034 ema=0.0040 open=0.9277 target=0.8736 lam=1.04
+[train] step=400 kl=0.0074 ema=0.0044 open=0.8271 target=0.7753 lam=1.57
+[train] step=500 kl=0.0030 ema=0.0043 open=0.7071 target=0.6550 lam=2.10
+[train] step=600 kl=0.0037 ema=0.0047 open=0.5924 target=0.5419 lam=2.62
+[train] step=700 kl=0.0073 ema=0.0060 open=0.4918 target=0.4389 lam=3.14
+[train] step=800 kl=0.0049 ema=0.0053 open=0.4076 target=0.3555 lam=3.65
+[train] step=900 kl=0.0043 ema=0.0058 open=0.3375 target=0.2859 lam=4.16
+[train] step=1000 kl=0.0056 ema=0.0066 open=0.2814 target=0.2300 lam=4.67
+[train] step=1100 kl=0.0059 ema=0.0063 open=0.2357 target=0.1850 lam=5.18
+[train] step=1200 kl=0.0055 ema=0.0060 open=0.1979 target=0.1477 lam=5.68
+[train] step=1300 kl=0.0079 ema=0.0061 open=0.1677 target=0.1172 lam=6.19
+[train] step=1400 kl=0.0050 ema=0.0061 open=0.1416 target=0.0910 lam=6.69
+[train] step=1500 kl=0.0055 ema=0.0061 open=0.1202 target=0.0702 lam=7.19
+[train] step=1600 kl=0.0050 ema=0.0052 open=0.1024 target=0.0522 lam=7.70
+[probe] step=1650 open=0.0947 acc=0.9766 (base 0.9766) dry=0
+[train] step=1700 kl=0.0093 ema=0.0057 open=0.0876 target=0.0375 lam=8.20
+[train] step=1800 kl=0.0040 ema=0.0055 open=0.0753 target=0.0252 lam=8.70
+[probe] step=1800 open=0.0753 acc=0.9922 (base 0.9766) dry=0
+[train] step=1900 kl=0.0046 ema=0.0049 open=0.0651 target=0.0150 lam=9.20
+[probe] step=1950 open=0.0606 acc=0.9531 (base 0.9766) dry=0
+[train] step=2000 kl=0.0048 ema=0.0047 open=0.0565 target=0.0080 lam=9.70
+[train] step=2100 kl=0.0052 ema=0.0054 open=0.0492 target=0.0080 lam=10.14
+[probe] step=2100 open=0.0492 acc=0.9453 (base 0.9766) dry=1
+[train] step=2200 kl=0.0048 ema=0.0048 open=0.0434 target=0.0080 lam=10.53
+[probe] step=2250 open=0.0409 acc=0.9219 (base 0.9766) dry=2
+[floor] probe floor at step 2250 open=0.0409
+[polish] 150 steps at floor=0.0409 (k=10256)
+[eval@5.00%] acc=0.9691 recovery=0.9949
+[eval@4.09%] acc=0.9531 recovery=0.9785
+[eval@3.00%] acc=0.9222 recovery=0.9468
+[guardrail] unmasked acc=0.9728 (base 0.9741); layers open 28/28
+[done] s44: 9.4 min
+=== DONE: --name s44 --seed 44 (exit 0) ===
+=== RUN: --name mlponly --seed 42 --lora-scope mlp ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 5721.88it/s]
+[setup] mlponly seed=42 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9914 layer_gates=False
+[probe] base=0.9766 on 128 train pairs
+[train] step=100 kl=0.0030 ema=0.0059 open=0.9907 target=0.9914 lam=0.00
+[train] step=200 kl=0.0024 ema=0.0041 open=0.9851 target=0.9307 lam=0.51
+[train] step=300 kl=0.0036 ema=0.0037 open=0.9362 target=0.8860 lam=1.04
+[train] step=400 kl=0.0047 ema=0.0122 open=0.8419 target=0.7918 lam=1.57
+[train] step=500 kl=0.0054 ema=0.0045 open=0.7331 target=0.6784 lam=2.10
+[train] step=600 kl=0.0069 ema=0.0051 open=0.6205 target=0.5692 lam=2.62
+[train] step=700 kl=0.0062 ema=0.0057 open=0.5210 target=0.4708 lam=3.14
+[train] step=800 kl=0.0059 ema=0.0057 open=0.4360 target=0.3841 lam=3.65
+[train] step=900 kl=0.0092 ema=0.0062 open=0.3640 target=0.3133 lam=4.16
+[train] step=1000 kl=0.0057 ema=0.0068 open=0.3103 target=0.2591 lam=4.67
+[train] step=1100 kl=0.0054 ema=0.0058 open=0.2635 target=0.2129 lam=5.18
+[train] step=1200 kl=0.0072 ema=0.0064 open=0.2289 target=0.1786 lam=5.68
+[train] step=1300 kl=0.0071 ema=0.0065 open=0.1980 target=0.1477 lam=6.19
+[train] step=1400 kl=0.0041 ema=0.0064 open=0.1704 target=0.1197 lam=6.69
+[train] step=1500 kl=0.0050 ema=0.0071 open=0.1473 target=0.0969 lam=7.20
+[train] step=1600 kl=0.0095 ema=0.2787 open=0.1278 target=0.0780 lam=7.70
+[train] step=1700 kl=0.0062 ema=0.0076 open=0.1158 target=0.0654 lam=8.19
+[train] step=1800 kl=0.0055 ema=0.0065 open=0.1036 target=0.0533 lam=8.70
+[probe] step=1800 open=0.1036 acc=0.9766 (base 0.9766) dry=0
+[train] step=1900 kl=0.0053 ema=0.0063 open=0.0927 target=0.0426 lam=9.20
+[probe] step=1950 open=0.0876 acc=0.9766 (base 0.9766) dry=0
+[train] step=2000 kl=0.0044 ema=0.0062 open=0.0827 target=0.0326 lam=9.70
+[train] step=2100 kl=0.0054 ema=0.0059 open=0.0739 target=0.0238 lam=10.20
+[probe] step=2100 open=0.0739 acc=0.9688 (base 0.9766) dry=0
+[train] step=2200 kl=0.0057 ema=0.0061 open=0.0661 target=0.0160 lam=10.70
+[probe] step=2250 open=0.0626 acc=0.9688 (base 0.9766) dry=0
+[train] step=2300 kl=0.0106 ema=0.0066 open=0.0594 target=0.0093 lam=11.20
+[train] step=2400 kl=0.0073 ema=0.0065 open=0.0537 target=0.0080 lam=11.68
+[probe] step=2400 open=0.0537 acc=0.9609 (base 0.9766) dry=0
+[train] step=2500 kl=0.0049 ema=0.0057 open=0.0487 target=0.0080 lam=12.11
+[probe] step=2550 open=0.0463 acc=0.9453 (base 0.9766) dry=1
+[train] step=2600 kl=0.0052 ema=0.0060 open=0.0441 target=0.0080 lam=12.50
+[train] step=2700 kl=0.0050 ema=0.0054 open=0.0404 target=0.0080 lam=12.84
+[probe] step=2700 open=0.0404 acc=0.9609 (base 0.9766) dry=0
+[train] step=2800 kl=0.0052 ema=0.0058 open=0.0371 target=0.0080 lam=13.15
+[probe] step=2850 open=0.0356 acc=0.9453 (base 0.9766) dry=1
+[train] step=2900 kl=0.0054 ema=0.0055 open=0.0341 target=0.0080 lam=13.42
+[train] step=3000 kl=0.0052 ema=0.0058 open=0.0318 target=0.0080 lam=13.67
+[probe] step=3000 open=0.0318 acc=0.9375 (base 0.9766) dry=2
+[floor] probe floor at step 3000 open=0.0318
+[polish] 150 steps at floor=0.0318 (k=7977)
+[eval@5.00%] acc=0.9481 recovery=0.9734
+[eval@3.18%] acc=0.9309 recovery=0.9556
+[eval@3.00%] acc=0.9235 recovery=0.9480
+[guardrail] unmasked acc=0.9667 (base 0.9741); layers open 28/28
+[done] mlponly: 8.6 min
+=== DONE: --name mlponly --seed 42 --lora-scope mlp (exit 0) ===
+=== RUN: --name ce0 --seed 42 --ce-weight 0.0 ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 5402.81it/s]
+[setup] ce0 seed=42 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9914 layer_gates=False
+[probe] base=0.9766 on 128 train pairs
+[train] step=100 kl=0.0028 ema=0.0060 open=0.9907 target=0.9914 lam=0.00
+[train] step=200 kl=0.0023 ema=0.0040 open=0.9849 target=0.9307 lam=0.51
+[train] step=300 kl=0.0027 ema=0.0034 open=0.9337 target=0.8798 lam=1.04
+[train] step=400 kl=0.0028 ema=0.0113 open=0.8343 target=0.7808 lam=1.57
+[train] step=500 kl=0.0037 ema=0.0039 open=0.7211 target=0.6690 lam=2.10
+[train] step=600 kl=0.0089 ema=0.0050 open=0.6062 target=0.5534 lam=2.62
+[train] step=700 kl=0.0048 ema=0.0051 open=0.5064 target=0.4546 lam=3.14
+[train] step=800 kl=0.0047 ema=0.0052 open=0.4220 target=0.3708 lam=3.65
+[train] step=900 kl=0.0067 ema=0.0055 open=0.3514 target=0.3003 lam=4.16
+[train] step=1000 kl=0.0049 ema=0.0053 open=0.2989 target=0.2485 lam=4.67
+[train] step=1100 kl=0.0046 ema=0.0052 open=0.2512 target=0.1998 lam=5.18
+[train] step=1200 kl=0.0073 ema=0.0060 open=0.2178 target=0.1677 lam=5.68
+[train] step=1300 kl=0.0058 ema=0.0057 open=0.1873 target=0.1368 lam=6.19
+[train] step=1400 kl=0.0041 ema=0.0055 open=0.1606 target=0.1100 lam=6.69
+[train] step=1500 kl=0.0065 ema=0.0061 open=0.1375 target=0.0872 lam=7.19
+[train] step=1600 kl=0.0066 ema=0.1322 open=0.1181 target=0.0682 lam=7.70
+[probe] step=1650 open=0.1114 acc=0.9844 (base 0.9766) dry=0
+[train] step=1700 kl=0.0054 ema=0.0056 open=0.1049 target=0.0549 lam=8.19
+[train] step=1800 kl=0.0050 ema=0.0056 open=0.0922 target=0.0420 lam=8.70
+[probe] step=1800 open=0.0922 acc=0.9766 (base 0.9766) dry=0
+[train] step=1900 kl=0.0051 ema=0.0057 open=0.0813 target=0.0313 lam=9.20
+[probe] step=1950 open=0.0763 acc=0.9844 (base 0.9766) dry=0
+[train] step=2000 kl=0.0038 ema=0.0051 open=0.0716 target=0.0216 lam=9.70
+[train] step=2100 kl=0.0051 ema=0.0051 open=0.0633 target=0.0132 lam=10.20
+[probe] step=2100 open=0.0633 acc=0.9453 (base 0.9766) dry=1
+[train] step=2200 kl=0.0042 ema=0.0046 open=0.0559 target=0.0080 lam=10.69
+[probe] step=2250 open=0.0527 acc=0.9453 (base 0.9766) dry=2
+[floor] probe floor at step 2250 open=0.0527
+[polish] 150 steps at floor=0.0527 (k=13218)
+[eval@5.27%] acc=0.9420 recovery=0.9670
+[eval@5.00%] acc=0.9420 recovery=0.9670
+[eval@3.00%] acc=0.7519 recovery=0.7719
+[guardrail] unmasked acc=0.9753 (base 0.9741); layers open 28/28
+[done] ce0: 9.5 min
+=== DONE: --name ce0 --seed 42 --ce-weight 0.0 (exit 0) ===
+BATTERY_COMPLETE

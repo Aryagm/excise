@@ -1,0 +1,101 @@
+=== RUN: --name s42 --seed 42 ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 5303.19it/s]
+[setup] s42 seed=42 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9878
+[train] step=100 kl=0.0054 ema=0.0142 open=0.9874 target=0.9878 lam=0.00
+[train] step=200 kl=0.0043 ema=0.0068 open=0.9850 target=0.9338 lam=0.48
+[train] step=300 kl=0.0080 ema=0.0130 open=0.9607 target=0.9079 lam=1.01
+[train] step=400 kl=0.0086 ema=0.0206 open=0.9094 target=0.8644 lam=1.53
+[train] step=500 kl=0.0125 ema=0.0077 open=0.8393 target=0.7889 lam=2.04
+[train] step=600 kl=0.0074 ema=0.0085 open=0.7321 target=0.6807 lam=2.57
+[train] step=700 kl=0.0136 ema=0.0232 open=0.6203 target=0.5874 lam=3.03
+[train] step=800 kl=0.0177 ema=0.0233 open=0.4930 target=0.4691 lam=3.49
+[train] step=900 kl=0.0138 ema=0.0207 open=0.3337 target=0.4466 lam=3.06
+[train] step=1000 kl=0.0134 ema=0.0119 open=0.2793 target=0.2993 lam=2.15
+[train] step=1100 kl=0.0108 ema=0.0117 open=0.2445 target=0.1936 lam=2.50
+[train] step=1200 kl=0.0125 ema=0.0169 open=0.1975 target=0.1659 lam=2.90
+[train] step=1300 kl=0.0250 ema=0.0173 open=0.1664 target=0.1159 lam=3.38
+[train] step=1400 kl=0.0086 ema=0.0123 open=0.1353 target=0.0851 lam=3.87
+[train] step=1500 kl=0.0078 ema=0.0121 open=0.1112 target=0.0612 lam=4.38
+[train] step=1600 kl=0.0128 ema=0.0256 open=0.0985 target=0.0485 lam=4.87
+[train] step=1700 kl=0.0110 ema=0.0100 open=0.0886 target=0.0385 lam=5.37
+[train] step=1800 kl=0.0095 ema=0.0095 open=0.0797 target=0.0295 lam=5.87
+[train] step=1900 kl=0.0132 ema=0.0155 open=0.0713 target=0.0212 lam=6.37
+[train] step=2000 kl=0.0072 ema=0.0144 open=0.0640 target=0.0140 lam=6.87
+[train] step=2100 kl=0.0089 ema=0.0090 open=0.0576 target=0.0080 lam=7.37
+[train] step=2200 kl=0.0161 ema=0.0090 open=0.0516 target=0.0080 lam=7.84
+[train] step=2300 kl=0.0079 ema=0.0205 open=0.0463 target=0.0080 lam=8.25
+[train] step=2400 kl=0.0082 ema=0.0091 open=0.0411 target=0.0080 lam=8.60
+[train] step=2500 kl=0.0086 ema=0.0092 open=0.0341 target=0.0080 lam=8.90
+[train] step=2600 kl=0.0079 ema=0.0079 open=0.0301 target=0.0080 lam=9.14
+[train] step=2700 kl=0.0063 ema=0.0078 open=0.0274 target=0.0080 lam=9.35
+[train] step=2800 kl=0.0060 ema=0.0075 open=0.0251 target=0.0080 lam=9.53
+[train] step=2900 kl=0.0102 ema=0.0095 open=0.0233 target=0.0080 lam=9.69
+[train] step=3000 kl=0.0073 ema=0.0082 open=0.0217 target=0.0080 lam=9.83
+[polish] 150 steps at floor=0.0217 (k=5438)
+[eval@5.00%] acc=0.6469 recovery=0.6641
+[eval@3.00%] acc=0.6395 recovery=0.6565
+[eval@2.17%] acc=0.6062 recovery=0.6223
+[guardrail] unmasked acc=0.9346 (base 0.9741); layers open 12/28
+[done] s42: 12.8 min
+=== DONE: --name s42 --seed 42 (exit 0) ===
+=== RUN: --name s43 --seed 43 ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 5833.33it/s]
+[setup] s43 seed=43 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9878
+[train] step=100 kl=0.0280 ema=0.0210 open=0.9873 target=0.9878 lam=0.00
+[train] step=200 kl=0.0026 ema=0.0221 open=0.9862 target=0.9338 lam=0.34
+[train] step=300 kl=0.0041 ema=0.0249 open=0.9745 target=0.9273 lam=0.86
+[train] step=400 kl=0.0059 ema=0.0096 open=0.9372 target=0.8828 lam=1.39
+[train] step=500 kl=0.0047 ema=0.0103 open=0.8621 target=0.8114 lam=1.91
+[train] step=600 kl=0.0236 ema=0.0087 open=0.7765 target=0.7252 lam=2.44
+[train] step=700 kl=0.0114 ema=0.0119 open=0.6618 target=0.6084 lam=2.94
+[train] step=800 kl=0.0149 ema=0.0195 open=0.4963 target=0.5176 lam=3.23
+[train] step=900 kl=0.0120 ema=0.0201 open=0.3557 target=0.4404 lam=2.74
+[train] step=1000 kl=0.0103 ema=0.0313 open=0.3092 target=0.3035 lam=2.46
+[train] step=1100 kl=0.0094 ema=0.0112 open=0.2825 target=0.2324 lam=2.77
+[train] step=1200 kl=0.0106 ema=0.0139 open=0.2453 target=0.1950 lam=3.27
+[train] step=1300 kl=0.0304 ema=0.0244 open=0.1738 target=0.1401 lam=3.76
+[train] step=1400 kl=0.0277 ema=0.0174 open=0.1417 target=0.1270 lam=3.92
+[train] step=1500 kl=0.0087 ema=0.0119 open=0.1184 target=0.0680 lam=4.29
+[train] step=1600 kl=0.0122 ema=0.0154 open=0.1058 target=0.0554 lam=4.79
+[train] step=1700 kl=0.0086 ema=0.0106 open=0.0953 target=0.0452 lam=5.29
+[train] step=1800 kl=0.0098 ema=0.0330 open=0.0858 target=0.0364 lam=5.79
+[train] step=1900 kl=0.0203 ema=0.0122 open=0.0776 target=0.0275 lam=6.29
+[train] step=2000 kl=0.0102 ema=0.0100 open=0.0700 target=0.0199 lam=6.79
+[train] step=2100 kl=0.0074 ema=0.0094 open=0.0629 target=0.0129 lam=7.29
+[train] step=2200 kl=0.0095 ema=0.0084 open=0.0565 target=0.0080 lam=7.79
+[train] step=2300 kl=0.0077 ema=0.0096 open=0.0509 target=0.0080 lam=8.24
+[train] step=2400 kl=0.0159 ema=0.0101 open=0.0460 target=0.0080 lam=8.64
+[train] step=2500 kl=0.0155 ema=0.0166 open=0.0417 target=0.0080 lam=9.00
+[train] step=2600 kl=0.0068 ema=0.0088 open=0.0381 target=0.0080 lam=9.32
+[train] step=2700 kl=0.0100 ema=0.0107 open=0.0349 target=0.0080 lam=9.61
+[train] step=2800 kl=0.0095 ema=0.0107 open=0.0320 target=0.0080 lam=9.86
+[train] step=2900 kl=0.0076 ema=0.0078 open=0.0294 target=0.0080 lam=10.09
+[train] step=3000 kl=0.0095 ema=0.0097 open=0.0272 target=0.0080 lam=10.29
+[polish] 150 steps at floor=0.0272 (k=6815)
+[eval@5.00%] acc=0.6531 recovery=0.6705
+[eval@3.00%] acc=0.6383 recovery=0.6553
+[eval@2.72%] acc=0.6469 recovery=0.6641
+[guardrail] unmasked acc=0.9593 (base 0.9741); layers open 13/28
+[done] s43: 12.7 min
+=== DONE: --name s43 --seed 43 (exit 0) ===
+=== RUN: --name s44 --seed 44 ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 5671.63it/s]
+[setup] s44 seed=44 channels=250880 train=7290 held=810
+[base] acc=0.9741
+[teacher] cached 26243 answer positions top128
+[attr] warm-start init open=0.9878
+[train] step=100 kl=0.0210 ema=0.0513 open=0.9874 target=0.9878 lam=0.00
+[train] step=200 kl=0.0299 ema=0.0131 open=0.9862 target=0.9338 lam=0.34
+[train] step=300 kl=0.0062 ema=0.0097 open=0.9756 target=0.9208 lam=0.87

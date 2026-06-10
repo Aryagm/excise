@@ -1,0 +1,78 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 5902.54it/s]
+[setup] 400 prompts; 36x9728=350208 channels
+[teacher] generating unmasked greedy tool calls...
+[teacher] 391/400 outputs contain <tool_call>
+[setup] train=320 held=80
+[teacher] cached 40 batches top128
+[transformers] `use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[train] step=50 kl=0.0027 ema=0.0136 open=0.9896 target=0.9900 lam=0.00
+[train] step=100 kl=0.0191 ema=0.0082 open=0.9893 target=0.9900 lam=0.00
+[train] step=150 kl=0.0069 ema=0.0047 open=0.9890 target=0.9378 lam=0.24
+[train] step=200 kl=0.0015 ema=0.0045 open=0.9822 target=0.9266 lam=0.50
+[train] step=250 kl=0.0005 ema=0.0039 open=0.9601 target=0.9100 lam=0.76
+[train] step=300 kl=0.0087 ema=0.0052 open=0.9538 target=0.8992 lam=1.02
+[train] step=350 kl=0.0056 ema=0.0043 open=0.9501 target=0.8992 lam=1.29
+[train] step=400 kl=0.0029 ema=0.0041 open=0.9438 target=0.8938 lam=1.55
+[train] step=450 kl=0.0076 ema=0.0039 open=0.9322 target=0.8778 lam=1.81
+[train] step=500 kl=0.0017 ema=0.0027 open=0.9139 target=0.8621 lam=2.08
+[train] step=550 kl=0.0006 ema=0.0013 open=0.8888 target=0.8365 lam=2.34
+[train] step=600 kl=0.0016 ema=0.0024 open=0.8570 target=0.8068 lam=2.60
+[train] step=650 kl=0.0009 ema=0.0019 open=0.8204 target=0.7689 lam=2.86
+[train] step=700 kl=0.0010 ema=0.0023 open=0.7812 target=0.7284 lam=3.13
+[train] step=750 kl=0.0010 ema=0.0049 open=0.7411 target=0.6900 lam=3.39
+[train] step=800 kl=0.0006 ema=0.0049 open=0.7000 target=0.6497 lam=3.65
+[train] step=850 kl=0.0010 ema=0.0033 open=0.6570 target=0.6044 lam=3.91
+[train] step=900 kl=0.0013 ema=0.0036 open=0.6136 target=0.5623 lam=4.17
+[probe] step=900 open=0.6136 self_match=0.9844 dry=0
+[train] step=950 kl=0.0326 ema=0.0120 open=0.5701 target=0.5200 lam=4.42
+[train] step=1000 kl=0.0129 ema=0.0058 open=0.5289 target=0.4780 lam=4.68
+[train] step=1050 kl=0.0047 ema=0.0155 open=0.4897 target=0.4394 lam=4.94
+[probe] step=1050 open=0.4897 self_match=0.9375 dry=0
+[train] step=1100 kl=0.0025 ema=0.0081 open=0.4558 target=0.4039 lam=5.19
+[train] step=1150 kl=0.0210 ema=0.0117 open=0.4279 target=0.3757 lam=5.45
+[train] step=1200 kl=0.0026 ema=0.0107 open=0.4022 target=0.3516 lam=5.71
+[probe] step=1200 open=0.4022 self_match=0.9688 dry=0
+[train] step=1250 kl=0.0022 ema=0.0140 open=0.3778 target=0.3271 lam=5.96
+[train] step=1300 kl=0.0005 ema=0.0073 open=0.3557 target=0.3044 lam=6.22
+[train] step=1350 kl=0.0174 ema=0.0114 open=0.3348 target=0.2832 lam=6.47
+[probe] step=1350 open=0.3348 self_match=0.9844 dry=0
+[train] step=1400 kl=0.0028 ema=0.0118 open=0.3153 target=0.2650 lam=6.72
+[train] step=1450 kl=0.0019 ema=0.0077 open=0.2970 target=0.2466 lam=6.98
+[train] step=1500 kl=0.0063 ema=0.0070 open=0.2802 target=0.2294 lam=7.23
+[probe] step=1500 open=0.2802 self_match=0.9688 dry=0
+[train] step=1550 kl=0.0009 ema=0.0054 open=0.2647 target=0.2134 lam=7.49
+[train] step=1600 kl=0.0023 ema=0.0061 open=0.2502 target=0.1997 lam=7.74
+[train] step=1650 kl=0.0033 ema=0.0057 open=0.2365 target=0.1858 lam=7.99
+[probe] step=1650 open=0.2365 self_match=0.9531 dry=0
+[train] step=1700 kl=0.0043 ema=0.0066 open=0.2238 target=0.1729 lam=8.24
+[train] step=1750 kl=0.0015 ema=0.0042 open=0.2119 target=0.1618 lam=8.50
+[train] step=1800 kl=0.0038 ema=0.0047 open=0.2009 target=0.1505 lam=8.75
+[probe] step=1800 open=0.2009 self_match=0.9219 dry=0
+[train] step=1850 kl=0.0017 ema=0.0091 open=0.1910 target=0.1409 lam=9.00
+[train] step=1900 kl=0.0050 ema=0.0078 open=0.1831 target=0.1326 lam=9.25
+[train] step=1950 kl=0.0056 ema=0.0103 open=0.1756 target=0.1249 lam=9.50
+[probe] step=1950 open=0.1756 self_match=0.9375 dry=0
+[train] step=2000 kl=0.0017 ema=0.0080 open=0.1686 target=0.1183 lam=9.76
+[train] step=2050 kl=0.0343 ema=0.0082 open=0.1618 target=0.1114 lam=10.01
+[train] step=2100 kl=0.0030 ema=0.0053 open=0.1553 target=0.1049 lam=10.26
+[probe] step=2100 open=0.1553 self_match=0.9688 dry=0
+[train] step=2150 kl=0.0037 ema=0.0093 open=0.1491 target=0.0988 lam=10.51
+[train] step=2200 kl=0.0008 ema=0.0156 open=0.1434 target=0.0930 lam=10.76
+[train] step=2250 kl=0.0028 ema=0.0057 open=0.1382 target=0.0881 lam=11.01
+[probe] step=2250 open=0.1382 self_match=0.9844 dry=0
+[train] step=2300 kl=0.0207 ema=0.0072 open=0.1332 target=0.0830 lam=11.27
+[train] step=2350 kl=0.0009 ema=0.0059 open=0.1285 target=0.0781 lam=11.52
+[train] step=2400 kl=0.0176 ema=0.0079 open=0.1240 target=0.0735 lam=11.77
+[probe] step=2400 open=0.1240 self_match=0.9531 dry=0
+[train] step=2450 kl=0.0065 ema=0.0046 open=0.1196 target=0.0693 lam=12.02
+[train] step=2500 kl=0.0007 ema=0.0039 open=0.1153 target=0.0652 lam=12.27
+[polish] 100 steps at floor=0.1153
+[eval@50%] held self-match=0.7750
+[eval@40%] held self-match=0.7625
+[eval@30%] held self-match=0.6625
+[eval@20%] held self-match=0.6000
+[eval@12%] held self-match=0.4500
+[guardrail] unmasked self-match=0.8625
+[done] fc4b: 63.3 min

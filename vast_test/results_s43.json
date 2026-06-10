@@ -1,0 +1,30 @@
+{
+  "name": "s43",
+  "seed": 43,
+  "config": {
+    "ce_weight": 0.05,
+    "lora_scope": "all",
+    "layer_gates": false
+  },
+  "base_acc": 0.9740740740740741,
+  "floor_frac": 0.038342997431755066,
+  "floor_reason": "probe",
+  "steps_used": 2400,
+  "evals": {
+    "0.0500": {
+      "acc": 0.9777777777777777,
+      "recovery": 1.0038022813688212
+    },
+    "0.0383": {
+      "acc": 0.9296296296296296,
+      "recovery": 0.9543726235741444
+    },
+    "0.0300": {
+      "acc": 0.8703703703703703,
+      "recovery": 0.8935361216730038
+    }
+  },
+  "unmasked_acc": 0.9691358024691358,
+  "layers_open": 28,
+  "wall_minutes": 10.00430606206258
+}

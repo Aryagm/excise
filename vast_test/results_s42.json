@@ -1,0 +1,30 @@
+{
+  "name": "s42",
+  "seed": 42,
+  "config": {
+    "ce_weight": 0.05,
+    "lora_scope": "all",
+    "layer_gates": false
+  },
+  "base_acc": 0.9740740740740741,
+  "floor_frac": 0.02936794050037861,
+  "floor_reason": "probe",
+  "steps_used": 2850,
+  "evals": {
+    "0.0500": {
+      "acc": 0.9827160493827161,
+      "recovery": 1.008871989860583
+    },
+    "0.0300": {
+      "acc": 0.9444444444444444,
+      "recovery": 0.9695817490494296
+    },
+    "0.0294": {
+      "acc": 0.9469135802469136,
+      "recovery": 0.9721166032953106
+    }
+  },
+  "unmasked_acc": 0.9740740740740741,
+  "layers_open": 28,
+  "wall_minutes": 11.980682361125947
+}

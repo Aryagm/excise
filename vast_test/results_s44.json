@@ -1,0 +1,30 @@
+{
+  "name": "s44",
+  "seed": 44,
+  "config": {
+    "ce_weight": 0.05,
+    "lora_scope": "all",
+    "layer_gates": false
+  },
+  "base_acc": 0.9740740740740741,
+  "floor_frac": 0.04087860509753227,
+  "floor_reason": "probe",
+  "steps_used": 2250,
+  "evals": {
+    "0.0500": {
+      "acc": 0.9691358024691358,
+      "recovery": 0.9949302915082382
+    },
+    "0.0409": {
+      "acc": 0.9530864197530864,
+      "recovery": 0.9784537389100126
+    },
+    "0.0300": {
+      "acc": 0.9222222222222223,
+      "recovery": 0.9467680608365019
+    }
+  },
+  "unmasked_acc": 0.9728395061728395,
+  "layers_open": 28,
+  "wall_minutes": 9.374849168459574
+}
