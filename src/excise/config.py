@@ -43,6 +43,12 @@ class ExtractConfig:
     guardrail_every: int = 4
     guardrail_weight: float = 1.0
 
+    # fidelity metric: "exact" compares full decoded outputs verbatim;
+    # "first_line" compares only up to the first newline — use for tasks
+    # where the answer ends early and the tail of the continuation is
+    # unconstrained (e.g. "12 + 34 =" -> "46\n<anything>")
+    match_scope: str = "exact"
+
     # finishing
     polish_steps: int = 150
     eval_budgets: tuple = (0.5, 0.3, 0.2, 0.1, 0.05)

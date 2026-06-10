@@ -12,9 +12,14 @@ from .data import prompt_batch
 from .teacher import _generate
 
 
+def _norm(text: str, scope: str) -> str:
+    text = text.strip()
+    return text.split("\n")[0].strip() if scope == "first_line" else text
+
+
 @torch.no_grad()
 def self_match(model, tok, examples, hooks, mode, mask=None, bs=8,
-               max_new_tokens=128, use_adapter=True):
+               max_new_tokens=128, use_adapter=True, scope="exact"):
     hooks.mode, hooks.mask = mode, mask
     device = next(model.parameters()).device
     tok.padding_side = "left"
@@ -33,8 +38,8 @@ def self_match(model, tok, examples, hooks, mode, mask=None, bs=8,
             gen = _generate(model, ids, attn, max_new_tokens,
                             tok.pad_token_id)
         for j, e in enumerate(chunk):
-            txt = tok.decode(gen[j, P:], skip_special_tokens=True).strip()
-            hit += txt == e["out_text"]
+            txt = tok.decode(gen[j, P:], skip_special_tokens=True)
+            hit += _norm(txt, scope) == _norm(e["out_text"], scope)
     hooks.mode, hooks.mask = "off", None
     if was_training:
         model.train()

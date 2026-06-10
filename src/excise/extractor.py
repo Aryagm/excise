@@ -80,7 +80,8 @@ class ExtractionResult:
             next(self._model.parameters()).device)
         return self_match(self._model, self._tok, self._held, self._hooks,
                           "mask", mask,
-                          max_new_tokens=self.config.max_new_tokens)
+                          max_new_tokens=self.config.max_new_tokens,
+                          scope=self.config.match_scope)
 
     def report(self) -> str:
         r = self.receipts
@@ -237,7 +238,8 @@ def extract(model_or_name, prompts, tokenizer=None,
             pmask = gates.topk_mask(k_now).to(device)
             pacc = self_match(model, tok, probe_set, hooks, "mask", pmask,
                               bs=cfg.batch_size,
-                              max_new_tokens=cfg.max_new_tokens)
+                              max_new_tokens=cfg.max_new_tokens,
+                              scope=cfg.match_scope)
             probe_trace.append({"step": step, "open": open_now,
                                 "self_match": pacc})
             probe_dry = probe_dry + 1 if pacc < 1.0 - cfg.probe_tol else 0
@@ -283,7 +285,8 @@ def extract(model_or_name, prompts, tokenizer=None,
         k = max(1, int(round(b * mlp_map.n_channels)))
         acc = self_match(model, tok, held, hooks, "mask",
                          gates.topk_mask(k).to(device), bs=cfg.batch_size,
-                         max_new_tokens=cfg.max_new_tokens)
+                         max_new_tokens=cfg.max_new_tokens,
+                         scope=cfg.match_scope)
         frontier.append((b, acc))
         log(f"[excise] eval@{b:.2%} held self-match={acc:.4f}")
 
@@ -294,10 +297,12 @@ def extract(model_or_name, prompts, tokenizer=None,
                           "mask",
                           rand_mask.view(mlp_map.n_layers, -1).to(device),
                           bs=cfg.batch_size,
-                          max_new_tokens=cfg.max_new_tokens)
+                          max_new_tokens=cfg.max_new_tokens,
+                          scope=cfg.match_scope)
     unmasked = self_match(model, tok, held, hooks, "off",
                           bs=cfg.batch_size,
-                          max_new_tokens=cfg.max_new_tokens)
+                          max_new_tokens=cfg.max_new_tokens,
+                          scope=cfg.match_scope)
     receipts = {
         "n_channels": mlp_map.n_channels,
         "floor": floor, "floor_reason": floor_reason, "steps": step,
