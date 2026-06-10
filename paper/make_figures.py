@@ -81,21 +81,21 @@ def fig_method():
             ax.text((x1 + x2) / 2, max(y1, y2) + dy, label, ha="center",
                     fontsize=6.6, color=GRAY, style="italic")
 
-    box(1, 9, 19, 17, "frozen base $M$",
-        ["greedy outputs $\\hat{y}$", "top-$k$ dists, cached once"])
-    box(27, 9, 23, 17, "joint student", ["LoRA $\\theta$ (rank 32)",
+    box(1, 9, 17, 17, "frozen base $M$",
+        ["greedy outputs $\\hat{y}$", "top-$k$ dists,", "cached once"])
+    box(29, 9, 21, 17, "joint student", ["LoRA $\\theta$ (rank 32)",
         "hard-concrete gates $z$", "KL leash + guardrail"], accent=True)
-    box(57, 9, 21, 17, "adaptive controller",
-        ["target $\\downarrow$ while KL $\\leq$ budget",
-         "probes generate & match;", "2 strikes $\\Rightarrow$ floor"])
-    box(84, 16.5, 15, 9.5, "frontier", ["+ receipts"])
-    box(84, 3.5, 15, 9.5, "sliced model", ["$\\equiv$ masked"])
+    box(60, 9, 22, 17, "adaptive controller",
+        ["target $\\downarrow$ while KL ok",
+         "probes generate & match", "2 strikes $\\Rightarrow$ floor"])
+    box(88, 16.5, 11.5, 9.5, "frontier", ["+ receipts"])
+    box(88, 3.5, 11.5, 9.5, "sliced", ["$\\equiv$ masked"])
 
-    arrow(20, 17.5, 27, 17.5, "prompts only", 3.2)
-    arrow(50, 17.5, 57, 17.5)
-    arrow(78, 19.5, 84, 21)
-    arrow(78, 15.5, 84, 8.5)
-    ax.text(38.5, 4.2, "one training run", ha="center", fontsize=7.2,
+    arrow(19, 17.5, 28, 17.5, "prompts only", 11.0)
+    arrow(51, 17.5, 59, 17.5)
+    arrow(83, 19.5, 87, 21)
+    arrow(83, 15.5, 87, 8.5)
+    ax.text(39.5, 4.0, "one training run", ha="center", fontsize=7.2,
             color=RED, style="italic")
     save(fig, "method")
 
