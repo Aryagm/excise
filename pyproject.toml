@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "excise"
+version = "0.1.0"
+description = "Extract one capability from an open LLM into a smaller, deployable model. One command, no labels."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Arya GM", email = "arya@e3group.ai" }]
+keywords = ["llm", "compression", "capability-extraction", "pruning", "distillation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.1",
+    "transformers>=4.45",
+    "peft>=0.13",
+    "numpy",
+]
+
+[project.urls]
+Repository = "https://github.com/e3group/excise"
+
+[project.scripts]
+excise = "excise.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/excise"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

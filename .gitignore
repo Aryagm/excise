@@ -1,0 +1,6 @@
+out/
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+vast_test/*.log
