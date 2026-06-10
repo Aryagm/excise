@@ -1,3 +1,5 @@
+# excise
+
 <p align="center"><img src="assets/banner.png" width="100%" alt="excise — extract one capability from an LLM. One command. No training data — the model teaches itself."></p>
 
 <p align="center">
