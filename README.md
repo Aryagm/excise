@@ -3,7 +3,6 @@
 <p align="center"><img src="assets/banner.png" width="100%" alt="excise — extract one capability from an LLM. One command. No training data — the model teaches itself."></p>
 
 <p align="center">
-<a href="https://github.com/Aryagm/excise/actions"><img src="https://github.com/Aryagm/excise/actions/workflows/test.yml/badge.svg" alt="tests"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license"></a>
 <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="python"></a>
 </p>

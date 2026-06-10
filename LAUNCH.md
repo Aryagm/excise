@@ -11,6 +11,10 @@ publishing — things only you can/should do).
   Renaming = `pyproject.toml`, `src/excise/`, README, paper, this file.
 - ☑ MIT license, CI workflow (CPU tests), .gitignore.
 
+- ☐ After flipping the repo public, restore the CI badge at the top of
+  README.md (badges on private repos don't render):
+  `<a href="https://github.com/Aryagm/excise/actions"><img src="https://github.com/Aryagm/excise/actions/workflows/test.yml/badge.svg" alt="tests"></a>`
+
 ## Library
 
 - ☑ Core, tests (5/5), CLI, examples (arithmetic, function calling, SmolLM2,

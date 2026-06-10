@@ -9,7 +9,7 @@ description = "Extract one capability from an open LLM into a smaller, deployabl
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [{ name = "Arya GM", email = "arya@e3group.ai" }]
+authors = [{ name = "Arya Manjaramkar", email = "arya@e3group.ai" }]
 keywords = ["llm", "compression", "capability-extraction", "pruning", "distillation"]
 classifiers = [
     "Development Status :: 4 - Beta",
