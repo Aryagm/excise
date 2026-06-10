@@ -4,14 +4,18 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{newtxtext,newtxmath}
 \usepackage{microtype}
-\usepackage[hidelinks]{hyperref}
-\usepackage[numbers]{natbib}
+\usepackage[font=small,labelfont=bf,skip=6pt]{caption}
 \usepackage{xcolor}
+\definecolor{linkblue}{RGB}{38,68,124}
+\usepackage[colorlinks=true,allcolors=linkblue]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\setlength{\bibsep}{3pt}
 
 \title{\textbf{Excise: One-Shot Capability Extraction\\from Open Language Models}}
-\author{Arya G.~M.\\\texttt{arya@e3group.ai}}
-\date{June 2026 \quad\textit{(workshop preprint; artifact: \texttt{pip install excise})}}
+\author{Arya G.~M.\\[1pt]\normalsize\texttt{arya@e3group.ai}}
+\date{\normalsize June 2026 \;---\; \textit{workshop preprint; artifact:} \texttt{pip install excise}}
 
 \newcommand{\todo}[1]{\textcolor{red}{[#1]}}
 
@@ -97,6 +101,17 @@ inherit the same blind spot.
 \end{enumerate}
 
 \section{Method}\label{sec:method}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/method.pdf}
+\caption{\textbf{One-shot extraction.} The frozen base model supplies
+label-free targets (greedy outputs and cached top-$k$ distributions); gates
+and adapter train jointly under a KL leash; an adaptive controller paced by
+generation probes finds the floor; the run emits the sparsity--fidelity
+frontier, integrity receipts, and a physically sliced model.}
+\label{fig:method}
+\end{figure}
 
 \paragraph{Setup.} Let $M$ be a frozen decoder-only transformer and
 $\mathcal{C}$ its MLP intermediate channels ($L \times d_\mathrm{ff}$; the
