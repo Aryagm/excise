@@ -37,6 +37,29 @@ publishing — things only you can/should do).
   preprint before public launch — we answer their stated open question on
   their benchmark.
 
+## Release-day command block (run in order)
+
+```bash
+# 1. PyPI (dist/ already built: excise-0.1.0 sdist + wheel)
+pip install twine && twine upload dist/*
+
+# 2. Flip public
+gh repo edit Aryagm/excise --visibility public
+
+# 3. Restore CI badge in README (markdown above), remove "PyPI release
+#    pending" comment from the Install section, commit, push.
+
+# 4. Tag + GitHub release
+git tag v0.1.0 && git push origin v0.1.0
+gh release create v0.1.0 --title "excise v0.1.0" \
+    --notes-file .github/release-notes-v0.1.0.md
+
+# 5. Post the thread (below), then Show HN + r/MachineLearning [P]
+```
+
+PRISM-authors email draft: `release_private/prism_authors_email.md`
+(gitignored — never committed). Send a few days BEFORE release day.
+
 ## Announcement thread (draft)
 
 1/ We built `excise`: point it at an open LLM + a pile of prompts, get back
