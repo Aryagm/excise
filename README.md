@@ -1,7 +1,11 @@
 # excise
 
-Extract one capability from an open LLM into a smaller, deployable model.
-One command. No training data — the model teaches itself.
+[![tests](https://github.com/Aryagm/excise/actions/workflows/test.yml/badge.svg)](https://github.com/Aryagm/excise/actions)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
+
+**Extract one capability from an open LLM into a smaller, deployable model.
+One command. No training data — the model teaches itself.**
 
 ```python
 from excise import extract
@@ -12,13 +16,38 @@ result.save("substrate/")  # mask + adapter + receipts
 small = result.export_sliced()   # physically smaller model
 ```
 
-## What it does
+<p align="center"><img src="assets/hero.png" width="85%"></p>
 
-Most of a language model is not needed for any single behavior. `excise`
-finds the minimal set of MLP channels that carries one capability — the one
-your prompts exercise — and trains a small adapter that concentrates the
-behavior into those channels, **jointly, in a single run**. The rest of the
-network can then be deleted.
+## Why
+
+You deploy a 4B model to do one thing — call your API, extract your fields,
+do your arithmetic — and pay for everything else it knows. Most of a language
+model is not needed for any single behavior. `excise` finds the part that
+is, and lets you delete the rest.
+
+## How it works, in three steps
+
+<p align="center"><img src="assets/method.png" width="95%"></p>
+
+1. **The model teaches itself.** You provide prompts that exercise the
+   capability — no labels. The frozen model's own outputs become the target.
+2. **Channels close while an adapter compacts the skill.** Learnable gates on
+   every MLP channel train jointly with a small LoRA adapter that keeps
+   behavior identical as the network shrinks around it. A controller closes
+   channels exactly as fast as behavior allows — measured by *actually
+   generating*, not by loss curves (losses lie at high sparsity; we measured
+   a 35-point silent failure).
+3. **Export.** The run stops at the floor it discovered, hands you the whole
+   size-vs-fidelity curve, an integrity report, and — via
+   `export_sliced()` — a physically smaller model with the dead weights
+   deleted.
+
+## Results
+
+One 12-minute run on a $0.40/hr GPU vs. the published four-stage pipeline,
+on that pipeline's own benchmark:
+
+<p align="center"><img src="assets/frontier.png" width="85%"></p>
 
 Measured results (single RTX 4090, details in the paper):
 
