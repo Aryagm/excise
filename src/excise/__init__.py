@@ -3,8 +3,8 @@ deployable model. One command, no labels."""
 
 from .config import ExtractConfig
 from .extractor import ExtractionResult, extract
-from .export import slice_model, param_count
+from .export import load_sliced, param_count, prune_vocab, slice_model
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = ["extract", "ExtractConfig", "ExtractionResult", "slice_model",
-           "param_count"]
+           "prune_vocab", "load_sliced", "param_count"]

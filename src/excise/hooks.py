@@ -13,15 +13,22 @@ class GateHooks:
     """Multiplies the down-projection input by a per-channel gate.
 
     mode:
-      "off"    — no-op (base model behavior)
-      "sample" — multiply by `self.sampled[li]` (training; pre-sampled)
-      "mask"   — multiply by `self.mask[li]` (binary, zero-isolation)
+      "off"     — no-op (base model behavior)
+      "sample"  — multiply by `self.sampled[li]` (training; pre-sampled)
+      "mask"    — multiply by `self.mask[li]` (binary, zero-isolation)
+      "capture" — no-op, but stash the down-projection input with
+                  retain_grad() so grad x act attribution can read it
+                  after backward. Requires grad to flow to activations
+                  (enable grad on the input embeddings) and must run with
+                  gradient checkpointing disabled — the stashed tensor is
+                  not part of a recomputed graph.
     """
 
     def __init__(self, mlp_map: MLPMap):
         self.mode = "off"
         self.mask = None          # [n_layers, d_ff] tensor
         self.sampled = None       # list of per-layer tensors
+        self.captured = {}        # li -> down-proj input (capture mode)
         self._handles = []
         for li, dp in enumerate(mlp_map.down_projs):
             self._handles.append(
@@ -32,6 +39,11 @@ class GateHooks:
             if self.mode == "off":
                 return None
             x = args[0]
+            if self.mode == "capture":
+                if x.requires_grad:
+                    x.retain_grad()
+                    self.captured[li] = x
+                return None
             if self.mode == "sample":
                 g = self.sampled[li]
             else:

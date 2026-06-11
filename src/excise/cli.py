@@ -16,7 +16,11 @@ def main(argv=None):
                     help=".txt (one per line) or .jsonl with {'prompt': ...}")
     ex.add_argument("--out", required=True)
     ex.add_argument("--slice", action="store_true",
-                    help="also export the physically sliced model")
+                    help="also export the physically sliced model "
+                         "(reload it with excise.load_sliced)")
+    ex.add_argument("--prune-vocab", action="store_true",
+                    help="with --slice: additionally prune the embedding/"
+                         "lm_head to the capability's token support")
     ex.add_argument("--max-steps", type=int, default=None)
     ex.add_argument("--seed", type=int, default=42)
     args = ap.parse_args(argv)
@@ -33,12 +37,12 @@ def main(argv=None):
     if args.slice:
         from .export import param_count
         before = param_count(result._model)
-        sliced = result.export_sliced()
+        sliced = result.export_sliced(prune_vocabulary=args.prune_vocab)
         after = param_count(sliced)
-        import torch
-        torch.save(sliced.state_dict(), out / "sliced_state_dict.pt")
+        result.save(args.out)          # now also writes out/sliced
+        print(result.report())
         print(f"sliced: {before/1e9:.2f}B -> {after/1e9:.2f}B params "
-              f"({before/after:.2f}x), state dict saved")
+              f"({before/after:.2f}x), saved to {out / 'sliced'}")
     return 0
 
 

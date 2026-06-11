@@ -9,9 +9,18 @@ _SHIFT = BETA * math.log(-GAMMA / ZETA)
 
 
 class HardConcreteGates(torch.nn.Module):
-    def __init__(self, n_layers: int, d_ff: int, init: float = 3.0):
+    def __init__(self, n_layers: int, d_ff: int, init=3.0):
+        """`init` is a constant log-alpha, or a [n_layers, d_ff] tensor
+        (e.g. an attribution warm-start that biases the channel ordering)."""
         super().__init__()
-        self.log_alpha = torch.nn.Parameter(torch.full((n_layers, d_ff), init))
+        if isinstance(init, torch.Tensor):
+            if init.shape != (n_layers, d_ff):
+                raise ValueError(f"init shape {tuple(init.shape)} != "
+                                 f"{(n_layers, d_ff)}")
+            self.log_alpha = torch.nn.Parameter(init.detach().clone().float())
+        else:
+            self.log_alpha = torch.nn.Parameter(
+                torch.full((n_layers, d_ff), float(init)))
 
     def sample_all(self) -> list[torch.Tensor]:
         """One stochastic gate vector per layer.

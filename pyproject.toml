@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "excise"
-version = "0.1.0"
+version = "0.2.0"
 description = "Extract one capability from an open LLM into a smaller, deployable model. One command, no labels."
 readme = "README.md"
 license = "MIT"
