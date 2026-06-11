@@ -218,9 +218,17 @@ def _attribution_init(model, hooks, batches, mlp_map, cfg, device, log):
             lp, m = out_logprobs(logits, labs[sl], P)
             (-lp.gather(-1, labs[sl][:, P:][m].unsqueeze(-1)).mean()
              ).backward()
-        for li, x in hooks.captured.items():
-            if x.grad is not None:
-                scores[li] += (x.grad.float() * x.float()).abs().sum((0, 1))
+        del logits, lp
+        # no_grad here is load-bearing: the captured x requires grad, so an
+        # in-place += outside no_grad silently makes `scores` a graph node
+        # that retains EVERY iteration's activations (gigabytes on
+        # long-sequence tasks; inherited from the research script, where
+        # short arithmetic sequences kept the leak invisible).
+        with torch.no_grad():
+            for li, x in hooks.captured.items():
+                if x.grad is not None:
+                    scores[li] += (x.grad.float()
+                                   * x.float()).abs().sum((0, 1))
         model.zero_grad(set_to_none=True)
         hooks.captured = {}
     hooks.mode = "off"
