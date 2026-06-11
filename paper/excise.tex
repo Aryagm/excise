@@ -67,14 +67,13 @@ compute for every result in this paper: under \$10 on one consumer GPU.
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.54\textwidth]{figures/frontier.pdf}
-\caption{\textbf{One joint run dominates the staged pipeline.}
-Sparsity--recovery frontier for 2-digit addition on Qwen2.5-Math-1.5B. Gray
-squares: PRISM's staged pipeline as reported \citep{prism2026}. Red circles:
-a single \texttt{excise} run per seed (3 seeds) emits the entire frontier;
-the floors (2.9--4.1\%) were found by the controller, not swept. Open
-diamonds: the released library's v0.2 floors (\S\ref{sec:v02}) --- all
-three seeds at 1.2\%, plotted by held-out verbatim self-match, which
-lower-bounds recovery. Caveats for this comparison in \S\ref{sec:honest}.}
+\caption{\textbf{One run, no labels, a $4\times$ smaller circuit than the
+hand-tuned pipeline.} 2-digit addition on Qwen2.5-Math-1.5B. Gray squares:
+PRISM's staged pipeline as reported \citep{prism2026} (recovery, task
+accuracy). Red diamonds: \texttt{excise}'s automatically-found floors ---
+all three seeds at 1.2\% of channels, plotted by held-out verbatim
+self-match, a stricter metric that lower-bounds recovery. Caveats for this
+comparison in \S\ref{sec:honest}.}
 \label{fig:frontier}
 \end{figure}
 
@@ -230,8 +229,9 @@ We use PRISM's testbed: 2-digit addition on Qwen2.5-Math-1.5B
 \citep{qwen25math} (canonical prompt \texttt{"a + b ="}, exhaustive sums,
 10\% held out; 250{,}880 MLP channels), zero-isolation deactivation, and
 recovery $=$ masked accuracy / base accuracy (base: 97.4\%).
-Figure~\ref{fig:frontier} shows the resulting frontier;
-Table~\ref{tab:arith} gives the key points.
+Table~\ref{tab:arith} gives the key points;
+Figure~\ref{fig:frontier} situates the library's automatic floors against
+the staged pipeline.
 
 \begin{table}[h]
 \centering\small

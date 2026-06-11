@@ -115,36 +115,24 @@ def fig_frontier():
     for x, y, t, off in prism:
         ax.annotate(t, (x, y), textcoords="offset points", xytext=off,
                     fontsize=7, color=GRAY)
-    xs, ys = [], []
-    for s in ("s42", "s43", "s44"):
-        r = load(f"results_{s}.json")
-        for k, v in r["evals"].items():
-            xs.append(float(k) * 100)
-            ys.append(v["recovery"] * 100)
-    ax.scatter(xs, ys, s=46, marker="o", color=RED, edgecolor="white",
-               linewidth=0.7, zorder=4,
-               label="excise (one joint run; 3 seeds)")
     v02 = []
     for s in (42, 43, 44):
         d = json.loads((ROOT / "library_runs" / "v02" /
                         f"arith_v02_long_s{s}" / "summary.json").read_text())
         v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
-    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=42, marker="D",
-               facecolor="white", edgecolor=RED, linewidth=1.1, zorder=5,
-               label="v0.2 floors (verbatim; lower-bounds recovery)")
-    ax.annotate("automatic floors:\n2.9–4.1%", xy=(2.95, 90),
-                xytext=(2.5, 60), fontsize=7.2, color=RED, ha="left",
-                arrowprops=dict(arrowstyle="-", color=RED, lw=0.7,
-                                shrinkB=5))
-    ax.annotate("v0.2: 1.2%", xy=(1.22, 91), xytext=(1.05, 70),
-                fontsize=7.2, color=RED, ha="left",
+    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=56, marker="D",
+               color=RED, edgecolor="white", linewidth=0.8, zorder=5,
+               label="excise (automatic floor; 3 seeds)")
+    ax.annotate("found automatically,\none label-free run:\n"
+                "1.2% at 91% fidelity", xy=(1.24, 90.5),
+                xytext=(1.6, 55), fontsize=7.2, color=RED, ha="left",
                 arrowprops=dict(arrowstyle="-", color=RED, lw=0.7,
                                 shrinkB=5))
     ax.set_xscale("log")
     ax.set_xticks([1.2, 2, 5, 10, 20, 50, 100])
     ax.set_xticklabels(["1.2", "2", "5", "10", "20", "50", "100"])
     ax.set_xlabel("MLP channels kept (%)")
-    ax.set_ylabel("recovery (% of base accuracy)")
+    ax.set_ylabel("fidelity (%)")
     ax.set_xlim(1, 120)
     ax.set_ylim(0, 112)
     ax.axhline(100, color=LGRAY, lw=0.7, ls=":", zorder=1)

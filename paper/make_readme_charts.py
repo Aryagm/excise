@@ -67,36 +67,24 @@ def frontier():
     ax.scatter([p[0] for p in prism], [p[1] for p in prism], s=130,
                marker="s", facecolor="white", edgecolor=GRAY, linewidth=2,
                zorder=3, label="published 4-stage pipeline (PRISM)")
-    xs, ys = [], []
-    for s in ("s42", "s43", "s44"):
-        r = json.loads((ROOT / "vast_test" / f"results_{s}.json").read_text())
-        for k, v in r["evals"].items():
-            xs.append(float(k) * 100)
-            ys.append(v["recovery"] * 100)
-    ax.scatter(xs, ys, s=150, marker="o", color=RED, edgecolor="white",
-               linewidth=1.5, zorder=4, label="excise — one run, 12 minutes")
     v02 = []
     for s in (42, 43, 44):
         d = json.loads((ROOT / "vast_test" / "library_runs" / "v02" /
                         f"arith_v02_long_s{s}" / "summary.json").read_text())
         v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
-    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=170, marker="D",
-               color=DARK, edgecolor="white", linewidth=1.5, zorder=5,
-               label="excise v0.2 floors — verbatim match (stricter)")
+    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=200, marker="D",
+               color=RED, edgecolor="white", linewidth=1.5, zorder=5,
+               label="excise — one run, floor found automatically")
     ax.annotate("attribution alone:\nskill collapses", xy=(5.75, 29),
                 xytext=(11, 38), fontsize=11, color=GRAY,
                 arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.2))
     ax.annotate("hand-tuned best:\n91% kept at 5%", xy=(5.05, 91.3),
                 xytext=(11, 72), fontsize=11, color=GRAY,
                 arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.2))
-    ax.annotate("excise: 97–101% kept,\nfloor found automatically",
-                xy=(3.0, 97.5), xytext=(3.4, 116), fontsize=12, color=RED,
+    ax.annotate("excise: 1.2% of channels,\n91% fidelity — automatic",
+                xy=(1.2, 91.4), xytext=(1.5, 112), fontsize=12, color=RED,
                 weight="bold",
                 arrowprops=dict(arrowstyle="->", color=RED, lw=1.4))
-    ax.annotate("v0.2: 1.2% of channels,\n91% verbatim fidelity",
-                xy=(1.2, 91.4), xytext=(1.05, 55), fontsize=12, color=DARK,
-                weight="bold",
-                arrowprops=dict(arrowstyle="->", color=DARK, lw=1.4))
     ax.set_xscale("log")
     ax.set_xticks([1.2, 3, 5, 10, 30, 100])
     ax.set_xticklabels(["1.2%", "3%", "5%", "10%", "30%", "100%"],
