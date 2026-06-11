@@ -124,16 +124,28 @@ def fig_frontier():
     ax.scatter(xs, ys, s=46, marker="o", color=RED, edgecolor="white",
                linewidth=0.7, zorder=4,
                label="excise (one joint run; 3 seeds)")
+    v02 = []
+    for s in (42, 43, 44):
+        d = json.loads((ROOT / "library_runs" / "v02" /
+                        f"arith_v02_long_s{s}" / "summary.json").read_text())
+        v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
+    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=42, marker="D",
+               facecolor="white", edgecolor=RED, linewidth=1.1, zorder=5,
+               label="v0.2 floors (verbatim; lower-bounds recovery)")
     ax.annotate("automatic floors:\n2.9–4.1%", xy=(2.95, 90),
-                xytext=(2.15, 66), fontsize=7.2, color=RED, ha="left",
+                xytext=(2.5, 60), fontsize=7.2, color=RED, ha="left",
+                arrowprops=dict(arrowstyle="-", color=RED, lw=0.7,
+                                shrinkB=5))
+    ax.annotate("v0.2: 1.2%", xy=(1.22, 91), xytext=(1.05, 70),
+                fontsize=7.2, color=RED, ha="left",
                 arrowprops=dict(arrowstyle="-", color=RED, lw=0.7,
                                 shrinkB=5))
     ax.set_xscale("log")
-    ax.set_xticks([2, 5, 10, 20, 50, 100])
-    ax.set_xticklabels(["2", "5", "10", "20", "50", "100"])
+    ax.set_xticks([1.2, 2, 5, 10, 20, 50, 100])
+    ax.set_xticklabels(["1.2", "2", "5", "10", "20", "50", "100"])
     ax.set_xlabel("MLP channels kept (%)")
     ax.set_ylabel("recovery (% of base accuracy)")
-    ax.set_xlim(2, 120)
+    ax.set_xlim(1, 120)
     ax.set_ylim(0, 112)
     ax.axhline(100, color=LGRAY, lw=0.7, ls=":", zorder=1)
     ax.legend(loc="lower right", frameon=False)

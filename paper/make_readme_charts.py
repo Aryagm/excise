@@ -27,9 +27,9 @@ RED, DARK, GRAY, LIGHT = "#c0392b", "#2c3e50", "#95a5a6", "#ecf0f1"
 
 def hero():
     rows = [  # (label, full B, sliced B, fidelity text, projected)
-        ("Arithmetic\nQwen2.5-Math-1.5B", 1.54, 0.42, "97% of the skill kept", False),
+        ("Arithmetic\nQwen2.5-Math-1.5B", 1.54, 0.17, "91% output fidelity at 9× smaller", False),
         ("Arithmetic (few-shot)\nSmolLM2-1.7B", 1.75, 0.59, "97% output fidelity", False),
-        ("JSON extraction\nQwen2.5-1.5B-Instruct", 1.58, 0.78, "90% output fidelity", False),
+        ("JSON extraction\nQwen2.5-1.5B-Instruct", 1.58, 0.49, "90% output fidelity", False),
         ("Function calling\nQwen3-4B", 4.02, 2.40, "~76% output fidelity", True),
     ]
     fig, ax = plt.subplots(figsize=(9.2, 4.0))
@@ -75,6 +75,14 @@ def frontier():
             ys.append(v["recovery"] * 100)
     ax.scatter(xs, ys, s=150, marker="o", color=RED, edgecolor="white",
                linewidth=1.5, zorder=4, label="excise — one run, 12 minutes")
+    v02 = []
+    for s in (42, 43, 44):
+        d = json.loads((ROOT / "vast_test" / "library_runs" / "v02" /
+                        f"arith_v02_long_s{s}" / "summary.json").read_text())
+        v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
+    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=170, marker="D",
+               color=DARK, edgecolor="white", linewidth=1.5, zorder=5,
+               label="excise v0.2 floors — verbatim match (stricter)")
     ax.annotate("attribution alone:\nskill collapses", xy=(5.75, 29),
                 xytext=(11, 38), fontsize=11, color=GRAY,
                 arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.2))
@@ -82,19 +90,24 @@ def frontier():
                 xytext=(11, 72), fontsize=11, color=GRAY,
                 arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.2))
     ax.annotate("excise: 97–101% kept,\nfloor found automatically",
-                xy=(3.0, 97.5), xytext=(2.2, 116), fontsize=12, color=RED,
+                xy=(3.0, 97.5), xytext=(3.4, 116), fontsize=12, color=RED,
                 weight="bold",
                 arrowprops=dict(arrowstyle="->", color=RED, lw=1.4))
+    ax.annotate("v0.2: 1.2% of channels,\n91% verbatim fidelity",
+                xy=(1.2, 91.4), xytext=(1.05, 55), fontsize=12, color=DARK,
+                weight="bold",
+                arrowprops=dict(arrowstyle="->", color=DARK, lw=1.4))
     ax.set_xscale("log")
-    ax.set_xticks([3, 5, 10, 30, 100])
-    ax.set_xticklabels(["3%", "5%", "10%", "30%", "100%"], fontsize=11)
+    ax.set_xticks([1.2, 3, 5, 10, 30, 100])
+    ax.set_xticklabels(["1.2%", "3%", "5%", "10%", "30%", "100%"],
+                       fontsize=11)
     ax.tick_params(axis="y", labelsize=11)
     ax.set_xlabel("how much of the model's MLP you keep", fontsize=12,
                   color=DARK)
     ax.set_ylabel("how much of the skill survives (%)", fontsize=12,
                   color=DARK)
     ax.axhline(100, color=GRAY, lw=0.8, ls=":")
-    ax.set_xlim(2, 130)
+    ax.set_xlim(0.95, 130)
     ax.set_ylim(0, 132)
     ax.legend(loc="lower right", fontsize=11, frameon=False)
     ax.grid(axis="y", alpha=0.25)
