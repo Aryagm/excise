@@ -303,6 +303,94 @@ def fig_v02():
     save(fig, "v02_calibration")
 
 
+# ----------------------------------------------------- data diversity
+def fig_diversity():
+    t = json.loads((ROOT / "library_runs" / "v02" / "json_v021_polished" /
+                    "summary.json").read_text())
+    d = json.loads((ROOT / "library_runs" / "v02" / "json_diverse" /
+                    "summary.json").read_text())
+
+    def row(s):
+        floor = s["floor"] * 100
+        fid = dict((round(b, 4), a) for b, a in s["frontier"])[
+            round(s["floor"], 4)] * 100
+        drift = (s["base_self_match"] - s["unmasked_self_match"]) * 100
+        return floor, fid, drift
+
+    panels = [("channel floor (%)", 0, "log"),
+              ("fidelity at floor (%)", 1, None),
+              ("unmasked drift (pts)", 2, None)]
+    vals = {"600 prompts,\none template": row(t),
+            "3,000 prompts,\nvaried": row(d)}
+    fig, axes = plt.subplots(1, 3, figsize=(6.8, 1.9))
+    for ax, (title, i, scale) in zip(axes, panels):
+        labels = list(vals)
+        ys = [vals[l][i] for l in labels]
+        bars = ax.bar(labels, ys, color=[GRAY, RED], width=0.55, zorder=3)
+        for b, v in zip(bars, ys):
+            ax.annotate(f"{v:.1f}", (b.get_x() + b.get_width() / 2,
+                                     v * (1.06 if scale else 1) + (0 if scale else 1)),
+                        ha="center", fontsize=7.6, color=INK)
+        if scale:
+            ax.set_yscale("log")
+            ax.set_ylim(1, 60)
+        else:
+            ax.set_ylim(0, max(ys) * 1.2)
+        ax.set_title(title, fontsize=8.2)
+        ax.tick_params(axis="x", labelsize=7.2)
+    fig.tight_layout(w_pad=2.0)
+    save(fig, "diversity")
+
+
+# ------------------------------------------------- parameter composition
+def fig_params():
+    # Qwen2.5-Math-1.5B architecture: 28 layers, hidden 1536, d_ff 8960,
+    # vocab 151,936 (tied embeddings). Component math from the config;
+    # totals match the measured param counts in the run receipts.
+    deep = json.loads((ROOT / "library_runs" / "v02" / "arith_v02_deep_s42" /
+                       "summary.json").read_text())
+    base_total = 1543.7
+    mlp0 = 3 * 1536 * 8960 * 28 / 1e6
+    emb0 = 151936 * 1536 / 1e6
+    rest = base_total - mlp0 - emb0
+    after_total = deep["params_after_slice_prune"] / 1e6
+    mlp1 = mlp0 * deep["floor"]
+    emb1 = 1746 * 1536 / 1e6
+    rest1 = after_total - mlp1 - emb1
+
+    fig, ax = plt.subplots(figsize=(6.0, 1.75))
+    rows = [("base 1.54B", [mlp0, emb0, rest]),
+            (f"after excise {after_total/1000:.2f}B",
+             [mlp1, emb1, rest1])]
+    colors = [RED, GOLD, GRAY]
+    names = ["MLP channels", "vocabulary (embed + head)",
+             "attention + norms"]
+    for yi, (label, parts) in enumerate(rows[::-1]):
+        x = 0
+        for p, c in zip(parts, colors):
+            ax.barh(yi, p, left=x, height=0.55, color=c, zorder=3,
+                    edgecolor="white", linewidth=0.5)
+            x += p
+        ax.text(-18, yi, label, ha="right", va="center", fontsize=8.4,
+                color=INK)
+    ax.annotate("extraction removes 99.3% of MLP channels and 98.9% of\n"
+                "the vocabulary; attention (untouched) is 94% of what remains",
+                xy=(after_total + 8, 0), xytext=(360, -0.05), fontsize=7.4,
+                color=INK, va="center",
+                arrowprops=dict(arrowstyle="-", color=GRAY, lw=0.7,
+                                shrinkB=4))
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colors]
+    ax.legend(handles, names, frameon=False, fontsize=7.2, loc="lower right",
+              ncol=3, bbox_to_anchor=(1.0, -0.42))
+    ax.set_xlim(0, 1600)
+    ax.set_ylim(-0.6, 1.6)
+    ax.set_yticks([])
+    ax.set_xlabel("parameters (millions)", fontsize=8)
+    ax.grid(axis="x", alpha=0.22)
+    ax.grid(axis="y", visible=False)
+    save(fig, "params")
+
+
 if __name__ == "__main__":
     fig_method()
     fig_frontier()
@@ -310,4 +398,6 @@ if __name__ == "__main__":
     fig_miscalibration()
     fig_ablations()
     fig_v02()
+    fig_diversity()
+    fig_params()
     print("figures ->", OUT)

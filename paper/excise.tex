@@ -17,6 +17,14 @@
   pdfauthor={Arya Manjaramkar}]{hyperref}
 \usepackage[numbers,sort&compress]{natbib}
 \setlength{\bibsep}{3pt}
+\usepackage{listings}
+\definecolor{codegray}{RGB}{110,110,110}
+\definecolor{codered}{RGB}{166,50,50}
+\lstdefinestyle{py}{language=Python,basicstyle=\small\ttfamily,
+  commentstyle=\color{codegray}\itshape,keywordstyle=\color{codered},
+  stringstyle=\color{codegray},showstringspaces=false,frame=single,
+  framerule=0.4pt,rulecolor=\color{codegray},xleftmargin=6pt,
+  framexleftmargin=6pt,aboveskip=8pt,belowskip=4pt}
 
 \title{\textbf{Excise: One-Shot Capability Extraction\\from Open Language Models}}
 \author{Arya Manjaramkar\\[1pt]\normalsize\texttt{arya@e3group.ai}}
@@ -229,7 +237,22 @@ behavior.
 \section{Results}\label{sec:results}
 
 All experiments ran on one RTX 4090 (\$0.40/hr); the complete set below
-consumed under \$5. Code, configs, and receipts:
+consumed under \$10, through the released library's public interface ---
+this is the entire workflow:
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[style=py]
+from excise import extract, load_sliced
+
+result = extract("Qwen/Qwen2.5-Math-1.5B", prompts=prompts)  # no labels
+print(result.report())            # frontier, floor, receipts, CIs
+small = result.export_sliced(prune_vocabulary=True)  # 1.54B -> 0.17B
+result.save("substrate/")         # receipts + the sliced artifact
+model = load_sliced("substrate/sliced")              # round-trips
+\end{lstlisting}
+\end{minipage}
+
+\noindent Code, configs, and per-run receipts:
 \texttt{github.com/Aryagm/excise}.
 
 \subsection{Arithmetic: surpassing the staged pipeline on its benchmark}
@@ -300,17 +323,15 @@ ${\sim}90\%$ at 40--50\% budgets.
 Second, the gap between probe fidelity on training prompts (92--98\% down to
 12\% open) and held-out fidelity quantifies a generalization phenomenon that
 exhaustively-covered tasks like arithmetic cannot exhibit; prompt diversity,
-not extraction machinery, is the binding constraint. A v0.2 follow-up run
-moved that constraint and found the next one: with $6\times$ the prompts
-(all six single-turn BFCL splits, the multi-tool loader fix, and 1--2
-distractor tools shuffled into every prompt so the substrate must carry
-tool \emph{selection}), unmasked drift improved to 88.4\% despite the
-deliberately harder task, but honest dev-split probes now stop the descent
-at 60.7\% of channels (75.3\% held) after only five epochs --- function
-calling is no longer memorization-bound but \emph{step}-bound, and the
-remaining lever is training length, not data or machinery. We report the
-v0.1 numbers above because the two runs solve different tasks (one tool
-given vs.\ selection among distractors) and are not directly comparable. For calibration:
+not extraction machinery, is the binding constraint. A v0.2 follow-up with
+$6\times$ the prompts (all six single-turn BFCL splits, plus 1--2
+distractor tools per prompt so the substrate must carry tool
+\emph{selection}) moved that constraint and exposed the next one: drift
+improved to 88.4\% despite the deliberately harder task, but honest
+dev-split probes now stop the descent at 60.7\% of channels (75.3\% held)
+after only five epochs. Function calling is no longer memorization-bound
+but \emph{step}-bound; the runs solve different tasks and are not directly
+comparable, so the v0.1 numbers stand above. For calibration:
 PRISM's raw mask recovered 19.1\% at 36.2\% of channels on the 8B sibling
 model, and their best staged collimator (with a curated, schema-validated
 gold corpus and a multi-run objective search) reached 84.6\%; metric and
@@ -340,70 +361,58 @@ settings.
 self-match; sliced 1.75B $\to$ 0.59B (3.0$\times$); all receipts clean.
 
 \paragraph{JSON extraction (Qwen2.5-1.5B-Instruct, chat-formatted prompts).}
-A broader capability, and the run that stress-tested the receipts. Under
-v0.1 it floored at 33.9\% of channels with 90.0\% held-out self-match---and
-the report flagged catastrophic unmasked drift: 55.8\% self-match, the
-adapter having been sharpened by the renormalized guardrail KL
-(\S\ref{sec:failures}) and then polished with no guardrail at all. v0.2
-reruns the identical task with the binned KL, 56 off-task anchor texts, and
-the guardrail active through polish: drift falls to 8.4 points (88.3\%
-against a 96.7\% base decode-noise ceiling), while the floor \emph{improves}
-to 27.5\% at the same 90.0\% fidelity, probe-detected with rollback (the
-stopper caught the failing 16.9\%-open probe and restored the last passing
-sparsity). Sliced-and-vocabulary-pruned export: 1.58B $\to$ 0.49B (the
-capability touches 9{,}448 token ids---broad capabilities are broad in
-vocabulary too). The guardrail trace makes the v0.1 blindness quantitative
-(Figure~\ref{fig:v02}a): at the same training step, the guardrail KL on
-\emph{train} batches reads $3\times10^{-4}$ (apparently perfect) while on
-anchor batches it reads $5\times10^{-3}$ to $0.15$---drift lives precisely
-where the train-batch guardrail cannot see it. Figure~\ref{fig:v02}b shows
-the recalibrated floor decision on the same run. This run also exposed (and then validated the fix for) a frontier
-artifact: the floor polish specializes the adapter to the floor mask, and
-the 50\%-budget mask initially read 54\%---\emph{below} the floor point.
-With per-budget re-polish from the floor snapshot
-(\texttt{frontier\_polish\_steps}), the same budget reads 86.7\% and the
-arithmetic frontier flattens to 91--92\% across every budget from 50\%
-down to its floor.
+The run that stress-tested the receipts. Under v0.1 it floored at 33.9\% of
+channels with 90.0\% held-out self-match---and the report flagged
+catastrophic unmasked drift (55.8\% self-match): the adapter had been
+sharpened by the renormalized guardrail KL (\S\ref{sec:failures}), then
+polished with no guardrail at all. v0.2 reruns the identical task with the
+binned KL, 56 off-task anchor texts, and the guardrail active through
+polish: drift falls to 8.4 points (88.3\% against a 96.7\% base
+decode-noise ceiling) while the floor \emph{improves} to 27.5\% at the same
+fidelity, probe-detected with rollback. Figure~\ref{fig:v02} makes the
+v0.1 blindness quantitative: at the same step, the guardrail KL reads
+$3\times10^{-4}$ on train batches (apparently perfect) and
+$5\times10^{-3}$--$0.15$ on anchors---drift lives precisely where a
+train-only guardrail cannot see it.
 
-\paragraph{Data diversity is the dominant knob.} The 600 training prompts
-above instantiate one sentence template, and held-out prompts share it ---
-so ``90\% at 27.5\% of channels'' partly measures template fit.
-Regenerating the same capability from 3{,}000 prompts spanning eight
-sentence forms, four instruction phrasings, and $3\times$ wider entity
-pools --- free, because the method is label-free and the teacher writes
-its own targets --- collapses the floor to \textbf{1.9\% of channels at
-97.2\%} held-out self-match, with unmasked drift down to 1.7 points, a
-flat ${\sim}98\%$ frontier at every budget, and a 1.58B $\to$ 0.21B
-(7.5$\times$) verified export. The run was still step-capped: even this
-floor is compute-bounded. What read as ``JSON extraction is a broad
-capability needing a third of the channels'' was a data-starved run.
+\paragraph{Data diversity is the dominant knob.} Those 600 training
+prompts instantiate one sentence template, and held-out prompts share
+it---so ``90\% at 27.5\%'' partly measures template fit. Regenerating the
+same capability from 3{,}000 prompts spanning eight sentence forms and
+four instruction phrasings---free, because the teacher writes its own
+targets---collapses the floor by $14\times$ and removes most of the
+remaining drift (Figure~\ref{fig:diversity}), with a flat ${\sim}98\%$
+frontier and a verified 1.58B $\to$ 0.21B export. Even this floor was
+step-capped. We initially read our four settings as ``capability breadth
+tracks substrate size''; this experiment corrects that. Substrate size
+measures the capability \emph{as exercised by the prompts}: floors are
+upper bounds jointly set by data coverage and compression compute, not
+intrinsic capability sizes---and data is the cheapest lever, because
+label-free prompts cost nothing to diversify.
 
-We initially read these four settings as ``capability breadth tracks
-substrate size,'' consistent with PRISM's cross-task observations. The
-diversity experiment above corrects that: substrate size measures the
-capability \emph{as exercised by the prompts}, and prompt coverage is the
-cheapest lever --- a template-limited JSON run floors at a third of the
-channels while a diverse one compresses to 2\%. Floors should be read as
-upper bounds jointly determined by data coverage and compression compute,
-not as intrinsic capability sizes.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/diversity.pdf}
+\caption{\textbf{Same capability, same model, same config --- only the
+prompts change.} JSON extraction from 600 single-template prompts vs.\
+3{,}000 varied ones (eight sentence forms, four instruction phrasings):
+the floor collapses $14\times$, fidelity at the floor rises seven points,
+and unmasked drift nearly disappears. Both runs are label-free, so the
+diverse variant costs nothing but generation.}
+\label{fig:diversity}
+\end{figure}
 
 \subsection{Recalibrating the library: v0.1 $\to$ v0.2}\label{sec:v02}
 
-The audit that followed the first release found that the shipped library
-was both \emph{optimistic} where it should be strict and \emph{strict}
-where it should be tolerant. Optimistic: probes ran on prompts that were
-also in the gradient batches, against an assumed-perfect baseline---but
-even the unmodified base model reproduces its own batched-bf16 greedy
-targets only ${\sim}92\%$ verbatim, so part of every probe reading was
-decode noise, not masking damage. Strict: the renormalized sparse KL
-(\S\ref{sec:failures}) penalized the student for the teacher's own
-truncated tail. v0.2 fixes both directions: binned KL with a residual
-bucket, probes on a dev split excluded from training, comparison against
-the unmasked model measured at the same step, rollback to the last passing
-sparsity, and the grad$\times$act warm-start the research pipeline had but
-the library port lost. On the identical dogfood task (same seed, hardware,
-and verbatim metric), the released library improves across every axis it
-reports:
+A post-release audit found the shipped library \emph{optimistic} where it
+should be strict (probes ran on prompts that were also in the gradient
+batches, against an assumed-perfect baseline---though even the unmodified
+base model reproduces its own batched-bf16 targets only ${\sim}92\%$
+verbatim) and \emph{strict} where it should be tolerant (the renormalized
+sparse KL, \S\ref{sec:failures}). v0.2 fixes both: binned KL, dev-split
+probes scored against the unmasked model at the same step, rollback to the
+last passing sparsity, and the grad$\times$act warm-start the library port
+had lost. Same task, seed, hardware, and metric:
 
 \begin{table}[h]
 \centering\small
@@ -471,17 +480,27 @@ physically smaller model. We verify: slicing Qwen2.5-Math-1.5B at the 2.9\%
 floor yields 94.8\% accuracy vs.\ 94.7\% masked (one example in 810), and
 \textbf{1.54B $\to$ 0.42B parameters (3.66$\times$)}.
 
-After MLP slicing, the dominant remaining cost is the vocabulary: embedding
-plus output head are ${\sim}55\%$ of the sliced model, while 2-digit
-addition touches only 1{,}746 of 151{,}936 token ids (prompt ids, teacher
-output ids, and the teacher's full cached top-$k$ support). Slicing the
-embedding rows to that support---the exported model speaks a remapped id
-space, with the mapping stored in its config---takes the same model to
-\textbf{0.17B parameters (9.0$\times$)} at the v0.2 floor. Both
-equivalences are re-verified inside every run and recorded in the receipts:
-held-out self-match for masked vs.\ sliced vs.\ vocabulary-pruned agreed to
-within one evaluation example here. The released library round-trips the
-heterogeneous-width artifact (\texttt{excise.load\_sliced}).
+After MLP slicing, the dominant remaining cost is the vocabulary: 2-digit
+addition touches only 1{,}746 of 151{,}936 token ids, so slicing the
+embedding rows to that support (the exported model speaks a remapped id
+space, mapping stored in its config) takes the same model to
+\textbf{0.17B parameters (9.0$\times$)} at the v0.2 floor
+(Figure~\ref{fig:params}). Both equivalences are re-verified inside every
+run and recorded in the receipts---masked vs.\ sliced vs.\
+vocabulary-pruned self-match agreed to within one evaluation example
+here---and the library round-trips the heterogeneous-width artifact
+(\texttt{excise.load\_sliced}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/params.pdf}
+\caption{\textbf{Where the parameters go.} Qwen2.5-Math-1.5B before and
+after extraction at the 0.71\% floor: 99.3\% of MLP channels and 98.9\% of
+the vocabulary are deleted outright; attention and norms, which the method
+does not touch, are 94\% of what remains --- the obvious next structured
+dimension.}
+\label{fig:params}
+\end{figure}
 
 Generation speedup in our original benchmark was only 1.11$\times$, and an
 honest decode-throughput benchmark (batch 1--64, 64-token greedy decode,
@@ -540,12 +559,11 @@ recomputation graph and breaks backward. Pre-sampling per step costs nothing
 and composes with checkpointing, which 4B+ models require on consumer GPUs.
 Separately, grad$\times$act attribution must accumulate under
 \texttt{no\_grad}: an in-place \texttt{+=} of a grad-requiring product
-silently turns the accumulator into an autograd node that retains every
-iteration's activation graph. On 10-token arithmetic sequences the leak is
-megabytes and invisible---our research pipeline carried it through every
-validated battery---on 100-token sequences it is gigabytes per iteration
-and an immediate OOM. Bugs that scale with sequence length hide in short
-benchmarks.
+silently turns the accumulator into an autograd node retaining every
+iteration's activation graph---megabytes and invisible on 10-token
+arithmetic (it survived every validated battery), gigabytes per iteration
+and an instant OOM on 100-token JSON. Bugs that scale with sequence length
+hide in short benchmarks.
 
 \begin{figure}[t]
 \centering
