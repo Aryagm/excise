@@ -269,7 +269,7 @@ def fig_v02():
     an = [(g["step"], g["kl"]) for g in r["guardrail_trace"]
           if g["src"] == "anchor"]
     a1.plot(*zip(*tr), "-", color=GRAY, lw=1.0,
-            label="train batches (what v0.1 saw)")
+            label="train batches (all a train-only guardrail sees)")
     a1.plot(*zip(*an), "-", color=RED, lw=1.2,
             label="off-task anchors (where drift lives)")
     a1.set_yscale("log")

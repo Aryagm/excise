@@ -55,10 +55,9 @@ and \emph{generation probes}---not loss curves---decide when the floor is
 reached. On PRISM's arithmetic benchmark, one run reaches \textbf{100.9\%
 recovery at 5\% of MLP channels} and automatically finds a
 \textbf{2.9\%-channel floor at 97\% recovery}, surpassing the staged
-pipeline's hand-tuned best (91.3\% at 5.05\%) on both axes; with the
-calibration fixes of the released library's second version the controller
-descends to \textbf{1.2\% of channels on every seed, and below 0.8\% given
-more steps} (91\% verbatim reproduction) --- still compute-bounded rather
+pipeline's hand-tuned best (91.3\% at 5.05\%) on both axes; the controller's
+automatic floors reach \textbf{1.2\% of channels on every seed, and 0.7\%
+given more steps} (91\% verbatim reproduction) --- compute-bounded rather
 than behavior-bounded.
 The method needs no labels---the target is the model's own
 outputs---generalizes to function calling on Qwen3-4B (76\% verbatim
@@ -80,13 +79,13 @@ compute for every result in this paper: under \$10 on one consumer GPU.
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.54\textwidth]{figures/frontier.pdf}
-\caption{\textbf{One run, no labels, a $4\times$ smaller circuit than the
+\caption{\textbf{One run, no labels, a $6.5\times$ smaller circuit than the
 hand-tuned pipeline.} 2-digit addition on Qwen2.5-Math-1.5B. Gray squares:
 PRISM's staged pipeline as reported \citep{prism2026} (recovery, task
 accuracy). Red diamonds: \texttt{excise}'s automatically-found floors ---
-all three seeds at 1.2\% of channels, plotted by held-out verbatim
-self-match, a stricter metric that lower-bounds recovery. Caveats for this
-comparison in \S\ref{sec:honest}.}
+three seeds at 1.2\% of channels and one extended-budget run at 0.71\% ---
+plotted by held-out verbatim self-match, a stricter metric that
+lower-bounds recovery. Caveats for this comparison in \S\ref{sec:honest}.}
 \label{fig:frontier}
 \end{figure}
 
@@ -132,13 +131,17 @@ one run (\S\ref{sec:controller}).
 model's own greedy output and full output distribution; no labeled data is
 required (\S\ref{sec:results}).
 \item \textbf{Physical export.} For gated MLPs, deleting masked channels is
-exactly equivalent to zero-masking them. We verify this empirically and ship
-it: 1.54B $\to$ 0.42B parameters at 97\% recovery (\S\ref{sec:slice}).
-\item \textbf{Two calibrated negative results.} Distribution-level KL is an
-unreliable stopping signal at high sparsity, and layer-granular gates permit
-silent train-distribution overfitting (\S\ref{sec:failures}). We argue these
-matter beyond our method: faithfulness metrics built on logit divergence
-inherit the same blind spot.
+exactly equivalent to zero-masking them; pruning the vocabulary to the
+capability's token support compounds it. We verify both inside every run
+and ship them: 1.54B $\to$ 0.17B parameters ($9\times$) at undamaged
+fidelity (\S\ref{sec:slice}).
+\item \textbf{Calibrated negative results.} Distribution-level KL is an
+unreliable stopping signal at high sparsity; a renormalized sparse-KL cache
+silently trains the unmasked model away from the base it should anchor; and
+layer-granular gates permit silent train-distribution overfitting
+(\S\ref{sec:failures}). We argue these matter beyond our method:
+faithfulness metrics built on truncated logit divergence inherit the same
+blind spots.
 \end{enumerate}
 
 \section{Method}\label{sec:method}
@@ -168,8 +171,8 @@ capability, the teacher is the base model itself: greedy continuations
 $\hat{y} = M(x)$ and the full distribution $p_M(\cdot \mid x, \hat y_{<t})$
 at each output position, cached once as top-128 sparse vectors
 \emph{plus the residual off-support mass}. Keeping the residual is not
-bookkeeping: renormalizing the support (as our first release did) makes the
-KL read $-\log(\text{coverage})$ even when student and teacher agree
+bookkeeping: renormalizing the support---the obvious implementation---makes
+the KL read $-\log(\text{coverage})$ even when student and teacher agree
 exactly, and places positive gradient on every off-support token
 (\S\ref{sec:failures}).
 
@@ -295,6 +298,18 @@ self-distillation, $\beta_\mathrm{ce}{=}0$) still reaches 96.7\% recovery
 but floors shallower (5.3\%)---labels are not needed for validity, only for
 the last ${\sim}2\%$ of budget.
 
+\paragraph{The floor is compute-bounded, not behavior-bounded.} All three
+seeds descend to the controller's configured lower bound---\textbf{1.2\% of
+channels}---with the masked--unmasked probe gap inside tolerance
+throughout, at 91.0--92.0\% held-out verbatim self-match. Lowering the
+bound and giving one seed 9{,}000 steps reaches \textbf{0.71\% of channels
+(${\sim}1{,}800$ of 250{,}880) at 91.1\%}, exiting on the step cap while
+still descending at ${\sim}0.1$ percentage points per thousand steps
+(Figure~\ref{fig:frontier}). On saturated-coverage tasks the reported floor
+is set by adapter-compression compute, not behavioral collapse: the
+minimal circuit for 2-digit addition is somewhere below 0.7\%,
+$6.5\times$ under the hand-refined published one.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.55\textwidth]{figures/ablations.pdf}
@@ -323,15 +338,15 @@ ${\sim}90\%$ at 40--50\% budgets.
 Second, the gap between probe fidelity on training prompts (92--98\% down to
 12\% open) and held-out fidelity quantifies a generalization phenomenon that
 exhaustively-covered tasks like arithmetic cannot exhibit; prompt diversity,
-not extraction machinery, is the binding constraint. A v0.2 follow-up with
-$6\times$ the prompts (all six single-turn BFCL splits, plus 1--2
-distractor tools per prompt so the substrate must carry tool
-\emph{selection}) moved that constraint and exposed the next one: drift
-improved to 88.4\% despite the deliberately harder task, but honest
-dev-split probes now stop the descent at 60.7\% of channels (75.3\% held)
-after only five epochs. Function calling is no longer memorization-bound
-but \emph{step}-bound; the runs solve different tasks and are not directly
-comparable, so the v0.1 numbers stand above. For calibration:
+not extraction machinery, is the binding constraint. A second experiment
+scales the prompts $6\times$ and hardens the task (all six single-turn BFCL
+splits, plus 1--2 distractor tools per prompt so the substrate must carry
+tool \emph{selection}): drift improves to 88.4\% despite the harder task,
+and the binding constraint moves again---dev-split probes stop the descent
+at 60.7\% of channels (75.3\% held) after only five epochs. With adequate
+data, function calling is \emph{step}-bound, not memorization-bound; the
+two settings solve different tasks (one given tool vs.\ selection among
+distractors), so we do not compare them directly. For calibration:
 PRISM's raw mask recovered 19.1\% at 36.2\% of channels on the 8B sibling
 model, and their best staged collimator (with a curated, schema-validated
 gold corpus and a multi-run objective search) reached 84.6\%; metric and
@@ -361,34 +376,24 @@ settings.
 self-match; sliced 1.75B $\to$ 0.59B (3.0$\times$); all receipts clean.
 
 \paragraph{JSON extraction (Qwen2.5-1.5B-Instruct, chat-formatted prompts).}
-The run that stress-tested the receipts. Under v0.1 it floored at 33.9\% of
-channels with 90.0\% held-out self-match---and the report flagged
-catastrophic unmasked drift (55.8\% self-match): the adapter had been
-sharpened by the renormalized guardrail KL (\S\ref{sec:failures}), then
-polished with no guardrail at all. v0.2 reruns the identical task with the
-binned KL, 56 off-task anchor texts, and the guardrail active through
-polish: drift falls to 8.4 points (88.3\% against a 96.7\% base
-decode-noise ceiling) while the floor \emph{improves} to 27.5\% at the same
-fidelity, probe-detected with rollback. Figure~\ref{fig:v02} makes the
-v0.1 blindness quantitative: at the same step, the guardrail KL reads
-$3\times10^{-4}$ on train batches (apparently perfect) and
-$5\times10^{-3}$--$0.15$ on anchors---drift lives precisely where a
-train-only guardrail cannot see it.
+From 3{,}000 label-free prompts spanning eight sentence forms and four
+instruction phrasings, structured JSON extraction floors at \textbf{1.9\%
+of channels at 97.2\%} held-out self-match---still step-capped---with 1.7
+points of unmasked drift, a flat ${\sim}98\%$ frontier at every budget,
+and a verified 1.58B $\to$ 0.21B export (the capability touches 9{,}448
+token ids; broader capabilities are broader in vocabulary too).
 
-\paragraph{Data diversity is the dominant knob.} Those 600 training
-prompts instantiate one sentence template, and held-out prompts share
-it---so ``90\% at 27.5\%'' partly measures template fit. Regenerating the
-same capability from 3{,}000 prompts spanning eight sentence forms and
-four instruction phrasings---free, because the teacher writes its own
-targets---collapses the floor by $14\times$ and removes most of the
-remaining drift (Figure~\ref{fig:diversity}), with a flat ${\sim}98\%$
-frontier and a verified 1.58B $\to$ 0.21B export. Even this floor was
-step-capped. We initially read our four settings as ``capability breadth
-tracks substrate size''; this experiment corrects that. Substrate size
-measures the capability \emph{as exercised by the prompts}: floors are
-upper bounds jointly set by data coverage and compression compute, not
-intrinsic capability sizes---and data is the cheapest lever, because
-label-free prompts cost nothing to diversify.
+\paragraph{Data coverage is the dominant knob.} Restricting the same
+capability to 600 prompts from a \emph{single} sentence template inflates
+the floor $14\times$ (to 27.5\%) and drops fidelity to 90\%
+(Figure~\ref{fig:diversity})---and since held-out prompts share the
+template, even that 90\% partly measures template fit. We initially read
+our settings as ``capability breadth tracks substrate size''; this
+ablation corrects that. Substrate size measures the capability \emph{as
+exercised by the prompts}: floors are upper bounds jointly set by data
+coverage and compression compute, not intrinsic capability sizes---and
+data is the cheapest lever, because label-free prompts cost nothing to
+diversify.
 
 \begin{figure}[t]
 \centering
@@ -401,74 +406,6 @@ and unmasked drift nearly disappears. Both runs are label-free, so the
 diverse variant costs nothing but generation.}
 \label{fig:diversity}
 \end{figure}
-
-\subsection{Recalibrating the library: v0.1 $\to$ v0.2}\label{sec:v02}
-
-A post-release audit found the shipped library \emph{optimistic} where it
-should be strict (probes ran on prompts that were also in the gradient
-batches, against an assumed-perfect baseline---though even the unmodified
-base model reproduces its own batched-bf16 targets only ${\sim}92\%$
-verbatim) and \emph{strict} where it should be tolerant (the renormalized
-sparse KL, \S\ref{sec:failures}). v0.2 fixes both: binned KL, dev-split
-probes scored against the unmasked model at the same step, rollback to the
-last passing sparsity, and the grad$\times$act warm-start the library port
-had lost. Same task, seed, hardware, and metric:
-
-\begin{table}[h]
-\centering\small
-\caption{\textbf{Library lineage on the arithmetic dogfood run}
-(Qwen2.5-Math-1.5B, label-free, verbatim held-out self-match; base model
-decode-noise ceiling 99.9\%; v0.2 is seeds 42/43/44). Every v0.2 seed
-descended to the controller's configured lower bound
-(\texttt{min\_target}) with probes still passing --- the true floor is at
-or below 1.2\%, $3.9\times$ under PRISM's hand-refined minimal circuit.}
-\label{tab:v02}
-\begin{tabular}{lcc}
-\toprule
- & v0.1 & v0.2 (3 seeds) \\
-\midrule
-floor found (probe-governed) & 7.6\% & \textbf{1.2 / 1.2 / 1.2\%} \\
-held-out self-match at floor & 89.0\% & \textbf{91.4 / 92.0 / 91.0\%} \\
-unmasked drift from base & 10.7 pts & \textbf{6.2 / 5.8 / 7.0 pts} \\
-exported parameters (from 1.54B) & 0.48B & \textbf{0.17B} \\
-wall clock (RTX 4090) & 8 min & 23--24 min \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{figures/v02_calibration.pdf}
-\caption{\textbf{v0.2 calibration in action} (JSON extraction run). (a) The
-guardrail KL measured on train batches (gray) vs.\ rotating off-task anchor
-batches (red), same adapter, same steps: the train-batch view---all v0.1
-had---reads $10$--$100\times$ lower than the anchor view. Drift lives
-exactly where a train-only guardrail cannot see it. (b) Floor detection:
-the masked probe (red) is compared against the unmasked model measured at
-the same step (gray, itself depressed by decode noise and residual drift),
-not against an assumed 100\%; when the masked probe falls below tolerance
-twice, the gates roll back to the last passing sparsity (27.5\%).}
-\label{fig:v02}
-\end{figure}
-
-Where does the descent actually stop? We lowered the bound to 0.2\% and
-gave one seed 9{,}000 steps: it reached \textbf{0.71\% of channels
-(${\sim}1{,}800$ of 250{,}880) at 91.1\%} with the masked--unmasked probe
-gap under 2 points throughout, and exited on the step cap --- still
-descending at ${\sim}0.1$ percentage points per thousand steps. On
-saturated-coverage tasks the floor we report is bounded by adapter
-compression \emph{compute}, not by behavioral collapse; the true minimal
-circuit for 2-digit addition is somewhere below 0.7\%, $6.5\times$ under
-the hand-refined published one.
-
-One calibration lesson generalizes: with $n{=}64$ verbatim probes,
-binomial noise alone is ${\pm}4$ points, and our first attempt at a
-tighter tolerance (3 points) sat inside that band---the very first two
-probes of the run tripped it, freezing the floor at 7.9\%, while the same
-configuration with a noise-aware tolerance and $n{=}128$ descends to
-1.2\% with probes passing throughout. Tolerances on generation metrics
-must be set against the metric's measured noise floor, not chosen for
-strictness.
 
 \subsection{Physical export: slicing is masking, and the vocabulary is
 next}\label{sec:slice}
@@ -484,7 +421,7 @@ After MLP slicing, the dominant remaining cost is the vocabulary: 2-digit
 addition touches only 1{,}746 of 151{,}936 token ids, so slicing the
 embedding rows to that support (the exported model speaks a remapped id
 space, mapping stored in its config) takes the same model to
-\textbf{0.17B parameters (9.0$\times$)} at the v0.2 floor
+\textbf{0.17B parameters (9.0$\times$)} at the 0.71\% floor
 (Figure~\ref{fig:params}). Both equivalences are re-verified inside every
 run and recorded in the receipts---masked vs.\ sliced vs.\
 vocabulary-pruned self-match agreed to within one evaluation example
@@ -513,6 +450,12 @@ slicing claims are routinely overstated.
 
 \section{What fails, and what it implies}\label{sec:failures}
 
+The method of \S\ref{sec:method} is an end state: most of its
+load-bearing choices exist because an earlier, more obvious implementation
+failed in a way worth documenting. This section is that record. Each
+failure was caught by the receipts the tool itself emits, and each implies
+something beyond this method.
+
 \paragraph{Distribution-level KL is miscalibrated at high sparsity.}
 Our first controller used the KL budget alone to pace the descent. It
 descended to 2.2\% open with EMA KL comfortably under budget---while true
@@ -526,24 +469,79 @@ divergence under teacher forcing inherits the blind spot.
 
 \paragraph{Renormalized sparse KL quietly sharpens the model it should
 anchor.} Caching the teacher's top-$k$ probabilities \emph{renormalized}
---- the obvious implementation, and ours through v0.1 --- biases every
-loss built on it: with the student exactly equal to the teacher, the
-``KL'' reads $-\log(\text{coverage})$ instead of zero, and its gradient
+--- the obvious implementation, and our first --- biases every loss built
+on it: with the student exactly equal to the teacher, the ``KL'' reads
+$-\log(\text{coverage})$ instead of zero, and its gradient
 $s_j - \hat{p}_j$ is positive on all off-support mass, actively pushing
 the student to concentrate onto each batch's cached support. On peaked
 tasks (arithmetic: coverage ${\approx}1$) the bias vanishes, which is how
 it survived three validated batteries. On diffuse tasks it surfaces in
 the worst place: the guardrail, whose entire job is to keep the unmasked
-model \emph{at} the base, instead trains it to sharpen --- one of the
-drift routes behind the JSON run's flagged 55.8\% unmasked self-match,
-compounding the guardrail-free polish phase. It also leaks into the
-controller: the annealing budget partly measures truncation rather than
-student error, inflating floors on diffuse tasks. The fix is one term:
-cache the support un-renormalized plus its residual mass and add a
-residual bucket to the KL, making it a proper binned divergence (zero at
-agreement). The general lesson mirrors the probe lesson above: a
-truncated divergence is not a divergence, and the place it fails is
-precisely where its value is supposed to be zero.
+model \emph{at} the base, instead trains it to sharpen. The receipts
+caught the incident: a JSON run whose unmasked self-match read 55.8\%
+(compounded by a then-guardrail-free polish phase). With the residual
+bucket restored, anchor batches, and the guardrail active through polish,
+the same task reads 88.3\% against a 96.7\% decode-noise ceiling --- and
+its floor \emph{improves}. Figure~\ref{fig:v02}a shows why train-batch
+monitoring missed it: at the same step, the guardrail KL reads
+$3\times10^{-4}$ on train batches (apparently perfect) and
+$5\times10^{-3}$--$0.15$ on off-task anchors. Drift lives precisely where
+a train-only guardrail cannot see it; an anchor that only watches the
+training distribution anchors nothing. The general lesson mirrors the
+probe lesson above: a truncated divergence is not a divergence, and the
+place it fails is precisely where its value is supposed to be zero.
+
+\paragraph{Probes calibrated on memorized data flatter the floor.} Our
+first release probed on prompts that were also in the gradient batches,
+against an assumed-perfect baseline---but even the unmodified base model
+reproduces its own batched-bf16 greedy targets only ${\sim}92\%$ verbatim,
+so part of every probe reading was decode noise, not masking damage
+(Figure~\ref{fig:v02}b shows the corrected decision rule). Re-running the
+identical extraction with dev-split probes scored against the unmasked
+model at the same step, rollback to the last passing sparsity, and the
+binned KL moves every number the tool reports
+(Table~\ref{tab:v02})---most of this paper's headline results were
+unreachable under the original calibration. One quantitative lesson
+generalizes: with $n{=}64$ verbatim probes, binomial noise alone is
+${\pm}4$ points, and a 3-point tolerance sat inside that band---the first
+two probes of a run tripped it, freezing the floor at 7.9\%, where a
+noise-aware tolerance descends to 1.2\% with probes passing throughout.
+Tolerances on generation metrics must be set against the metric's measured
+noise floor, not chosen for strictness.
+
+\begin{table}[h]
+\centering\small
+\caption{\textbf{The same extraction under miscalibrated vs.\ calibrated
+receipts} (arithmetic dogfood run; identical task, seed, hardware, and
+metric; base decode-noise ceiling 99.9\%). Calibration is not cosmetic:
+it halves measured drift and reaches a $6\times$ lower floor.}
+\label{tab:v02}
+\begin{tabular}{lcc}
+\toprule
+ & original & calibrated (3 seeds) \\
+\midrule
+floor found (probe-governed) & 7.6\% & \textbf{1.2 / 1.2 / 1.2\%} \\
+held-out self-match at floor & 89.0\% & \textbf{91.4 / 92.0 / 91.0\%} \\
+unmasked drift from base & 10.7 pts & \textbf{6.2 / 5.8 / 7.0 pts} \\
+exported parameters (from 1.54B) & 0.48B & \textbf{0.17B} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/v02_calibration.pdf}
+\caption{\textbf{Two failure modes, instrumented} (JSON extraction run).
+(a) The guardrail KL measured on train batches (gray) vs.\ rotating
+off-task anchor batches (red), same adapter, same steps: the train-batch
+view reads $10$--$100\times$ lower than the anchor view. Drift lives
+exactly where a train-only guardrail cannot see it. (b) Floor detection:
+the masked probe (red) is compared against the unmasked model measured at
+the same step (gray, itself depressed by decode noise and residual
+drift), never against an assumed 100\%; when the masked probe falls below
+tolerance twice, the gates roll back to the last passing sparsity.}
+\label{fig:v02}
+\end{figure}
 
 \paragraph{Layer-granular gates permit silent overfitting.} Adding
 per-layer gates (hierarchical $L_0$, intended to enable wall-clock-friendly
@@ -568,8 +566,8 @@ hide in short benchmarks.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.58\textwidth]{figures/miscalibration.pdf}
-\caption{\textbf{Losses lie; generations don't.} The failed KL-only
-controller (v2.0): EMA distillation KL stays under budget throughout the
+\caption{\textbf{Losses lie; generations don't.} An early KL-only
+controller: EMA distillation KL stays under budget throughout the
 descent (left axis) while true held-out recovery collapses (crosses, right
 axis). Generation probes detect this; losses do not.}
 \label{fig:miscal}
@@ -590,7 +588,7 @@ as context, not a head-to-head.
 \item \textbf{Seeds.} Arithmetic results are 3 seeds; function calling is a
 single seed, and its floor was step-cap-limited, not probe-detected.
 \item \textbf{Scope.} PRISM's $10^3$ H100-hour budget bought breadth
-(translation, an 8B model, extensive controls) that our \$5 did not; the
+(translation, an 8B model, extensive controls) that our \$10 did not; the
 claim here is that the \emph{per-result} process cost collapses, not that
 our evidence is broader.
 \end{itemize}
@@ -617,13 +615,14 @@ retraining from initialization.
 
 \section{Limitations}
 
-Capabilities are bounded by prompt coverage: the function-calling
-generalization gap is a data problem the tool can flag (via held-out
-receipts) but not solve. Self-match undercounts semantic fidelity. The
-sliced artifact has heterogeneous layer widths and needs a re-slice step on
-load. We have not yet run the 8B headline, multi-seed function calling, or
-non-Qwen replications beyond CPU-level architecture tests; these are in
-progress and gate any stronger claims. Easier extraction also eases misuse
+Capabilities are bounded by prompt coverage: the tool can flag a
+generalization gap (via held-out receipts) but not close it without more
+data. Self-match undercounts semantic fidelity. Vocabulary-pruned
+artifacts speak a remapped id space, and the function-calling vocabulary
+support is 101k of 152k ids, so that lever pays little there. Attention is
+untouched and dominates the exported model. We have not yet run the 8B
+headline, multi-seed function calling, or non-Qwen replications beyond
+SmolLM2 and CPU-level architecture tests; these gate any stronger claims. Easier extraction also eases misuse
 (extracting narrow capabilities from safety-tuned models); receipts and
 intended-use documentation ship with the tool, mirroring PRISM's stance.
 
@@ -634,7 +633,7 @@ the complement switched off---and named training-time budget reshaping as
 its highest-value open direction. We built that: one run, on one consumer
 GPU, that selects and relocates simultaneously, finds its own floor by
 generating rather than by watching losses, and leaves behind a frontier,
-integrity receipts, and a model 3.7$\times$ smaller. The headline numbers
+integrity receipts, and a model $9\times$ smaller. The headline numbers
 surpass the staged pipeline on its own benchmark, but the durable lesson may
 be the negative one: logit-level divergence is not behavior, and any metric
 built on it will miss collapses that a cheap generation probe catches.
