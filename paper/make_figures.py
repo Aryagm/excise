@@ -84,10 +84,12 @@ def fig_method():
     box(1, 9, 17, 17, "frozen base $M$",
         ["greedy outputs $\\hat{y}$", "top-$k$ dists,", "cached once"])
     box(29, 9, 21, 17, "joint student", ["LoRA $\\theta$ (rank 32)",
-        "hard-concrete gates $z$", "KL leash + guardrail"], accent=True)
+        "hard-concrete gates $z$", "binned KL + anchored guardrail"],
+        accent=True)
     box(60, 9, 22, 17, "adaptive controller",
         ["target $\\downarrow$ while KL ok",
-         "probes generate & match", "2 strikes $\\Rightarrow$ floor"])
+         "probes vs unmasked baseline",
+         "2 strikes $\\Rightarrow$ floor + rollback"])
     box(88, 16.5, 11.5, 9.5, "frontier", ["+ receipts"])
     box(88, 3.5, 11.5, 9.5, "sliced", ["$\\equiv$ masked"])
 
@@ -251,10 +253,58 @@ def fig_ablations():
     save(fig, "ablations")
 
 
+# ------------------------------------------------------- v0.2 (json)
+def fig_v02():
+    r = json.loads((ROOT / "library_runs" / "v02" / "json_v02" /
+                    "receipts.json").read_text())
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(6.8, 2.6))
+
+    # (a) guardrail KL: train batches read near-zero while anchor batches
+    # expose the drift the train-only guardrail cannot see
+    tr = [(g["step"], g["kl"]) for g in r["guardrail_trace"]
+          if g["src"] == "train"]
+    an = [(g["step"], g["kl"]) for g in r["guardrail_trace"]
+          if g["src"] == "anchor"]
+    a1.plot(*zip(*tr), "-", color=GRAY, lw=1.0,
+            label="train batches (what v0.1 saw)")
+    a1.plot(*zip(*an), "-", color=RED, lw=1.2,
+            label="off-task anchors (where drift lives)")
+    a1.set_yscale("log")
+    a1.set_xlabel("step")
+    a1.set_ylabel("guardrail KL to base")
+    a1.set_title("(a) the same adapter, two guardrail views", fontsize=8.2)
+    a1.legend(frameon=False, loc="upper right", fontsize=6.8)
+
+    # (b) probe trace: masked vs unmasked-at-same-step, with the rollback
+    opens = [p["open"] * 100 for p in r["probe_trace"]]
+    masked = [p["self_match"] * 100 for p in r["probe_trace"]]
+    unm = [p["unmasked"] * 100 for p in r["probe_trace"]]
+    a2.plot(opens, unm, "--", color=GRAY, lw=1.1, marker="o", ms=3.5,
+            label="unmasked, same step (baseline)")
+    a2.plot(opens, masked, "-", color=RED, lw=1.3, marker="o", ms=3.5,
+            label="masked probe")
+    floor = r["floor"] * 100
+    a2.axvline(floor, color=GOLD, lw=1.1, ls=":")
+    a2.annotate(f"floor {floor:.1f}%\n(rolled back to\nlast passing probe)",
+                xy=(floor, 38), xytext=(floor + 9, 22), fontsize=6.8,
+                color=INK,
+                arrowprops=dict(arrowstyle="-", color=GOLD, lw=0.8))
+    a2.invert_xaxis()
+    a2.set_xlabel("MLP channels open (%)")
+    a2.set_ylabel("exact self-match (%)")
+    a2.set_ylim(0, 108)
+    a2.set_title("(b) floor detection against a measured baseline",
+                 fontsize=8.2)
+    a2.legend(frameon=False, loc="lower left", fontsize=6.8)
+    fig.tight_layout(w_pad=2.2)
+    save(fig, "v02_calibration")
+
+
 if __name__ == "__main__":
     fig_method()
     fig_frontier()
     fig_fc()
     fig_miscalibration()
     fig_ablations()
+    fig_v02()
     print("figures ->", OUT)

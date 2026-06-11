@@ -331,11 +331,12 @@ to 27.5\% at the same 90.0\% fidelity, probe-detected with rollback (the
 stopper caught the failing 16.9\%-open probe and restored the last passing
 sparsity). Sliced-and-vocabulary-pruned export: 1.58B $\to$ 0.49B (the
 capability touches 9{,}448 token ids---broad capabilities are broad in
-vocabulary too). The guardrail trace makes the v0.1 blindness quantitative:
-at the same training step, the guardrail KL on \emph{train} batches reads
-$3\times10^{-4}$ (apparently perfect) while on anchor batches it reads
-$5\times10^{-3}$ to $0.15$---drift lives precisely where the train-batch
-guardrail cannot see it. One honest caveat survives both versions: after
+vocabulary too). The guardrail trace makes the v0.1 blindness quantitative
+(Figure~\ref{fig:v02}a): at the same training step, the guardrail KL on
+\emph{train} batches reads $3\times10^{-4}$ (apparently perfect) while on
+anchor batches it reads $5\times10^{-3}$ to $0.15$---drift lives precisely
+where the train-batch guardrail cannot see it. Figure~\ref{fig:v02}b shows
+the recalibrated floor decision on the same run. One honest caveat survives both versions: after
 polish specializes the adapter to the floor mask, off-floor frontier points
 degrade (the 50\%-budget mask reads \emph{below} the floor mask); the floor
 point is the deployable artifact, and the frontier should be read as
@@ -385,6 +386,21 @@ wall clock (RTX 4090) & 8 min & 23--24 min \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/v02_calibration.pdf}
+\caption{\textbf{v0.2 calibration in action} (JSON extraction run). (a) The
+guardrail KL measured on train batches (gray) vs.\ rotating off-task anchor
+batches (red), same adapter, same steps: the train-batch view---all v0.1
+had---reads $10$--$100\times$ lower than the anchor view. Drift lives
+exactly where a train-only guardrail cannot see it. (b) Floor detection:
+the masked probe (red) is compared against the unmasked model measured at
+the same step (gray, itself depressed by decode noise and residual drift),
+not against an assumed 100\%; when the masked probe falls below tolerance
+twice, the gates roll back to the last passing sparsity (27.5\%).}
+\label{fig:v02}
+\end{figure}
 
 One calibration lesson generalizes: with $n{=}64$ verbatim probes,
 binomial noise alone is ${\pm}4$ points, and our first attempt at a
