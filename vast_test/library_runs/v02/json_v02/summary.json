@@ -1,0 +1,77 @@
+{
+  "task": "json",
+  "floor": 0.2750639319419861,
+  "floor_reason": "probe",
+  "frontier": [
+    [
+      0.5,
+      0.5416666666666666
+    ],
+    [
+      0.3,
+      0.8916666666666667
+    ],
+    [
+      0.2751,
+      0.9
+    ]
+  ],
+  "probe_base": 0.859375,
+  "base_self_match": 0.9666666666666667,
+  "unmasked_self_match": 0.8833333333333333,
+  "random_mask_self_match": 0.0,
+  "steps": 1200,
+  "wall_minutes": 8.901302897930146,
+  "vocab_support_size": 9448,
+  "guardrail_trace_tail": [
+    {
+      "step": 1232,
+      "src": "anchor",
+      "kl": 0.1540941298007965
+    },
+    {
+      "step": 1248,
+      "src": "train",
+      "kl": 0.00033209347748197615
+    },
+    {
+      "step": 1264,
+      "src": "anchor",
+      "kl": 0.0101475203409791
+    },
+    {
+      "step": 1280,
+      "src": "train",
+      "kl": 0.0002310729178134352
+    },
+    {
+      "step": 1296,
+      "src": "anchor",
+      "kl": 0.006290215998888016
+    },
+    {
+      "step": 1312,
+      "src": "train",
+      "kl": 0.0002702196652535349
+    },
+    {
+      "step": 1328,
+      "src": "anchor",
+      "kl": 0.005593161564320326
+    },
+    {
+      "step": 1344,
+      "src": "train",
+      "kl": 0.00021243345690891147
+    }
+  ],
+  "v01_reference": {
+    "floor": 0.339,
+    "held_at_floor": 0.9,
+    "unmasked_drift": 0.558
+  },
+  "params_before": 1580643840,
+  "params_after_slice_prune": 486786560,
+  "sliced_self_match": 0.8833333333333333,
+  "pruned_self_match": 0.875
+}

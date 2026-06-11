@@ -1,0 +1,54 @@
+{
+  "task": "arith",
+  "floor": 0.011999623849987984,
+  "floor_reason": "min_target",
+  "frontier": [
+    [
+      0.5,
+      0.7611111111111111
+    ],
+    [
+      0.3,
+      0.7611111111111111
+    ],
+    [
+      0.2,
+      0.7407407407407407
+    ],
+    [
+      0.1,
+      0.804320987654321
+    ],
+    [
+      0.05,
+      0.8074074074074075
+    ],
+    [
+      0.012,
+      0.9098765432098765
+    ]
+  ],
+  "probe_base": 0.96875,
+  "base_self_match": 1.0,
+  "unmasked_self_match": 0.9296296296296296,
+  "random_mask_self_match": 0.0,
+  "steps": 4626,
+  "wall_minutes": 22.724296696980794,
+  "vocab_support_size": 1736,
+  "params_before": 1580643840,
+  "params_after_slice_prune": 170822144,
+  "sliced_self_match": 0.90625,
+  "pruned_self_match": 0.8984375,
+  "bench_sliced_pruned": {
+    "bs1": 40.5,
+    "bs8": 307.5,
+    "bs64": 2430.7
+  },
+  "params_base": 1543714304,
+  "bench_base": {
+    "bs1": 39.5,
+    "bs8": 300.4,
+    "bs64": 2362.0
+  },
+  "total_minutes": 23.4346506635348
+}

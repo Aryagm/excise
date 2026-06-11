@@ -1,0 +1,21 @@
+{
+  "n_channels": 250880,
+  "floor": 0.07621599733829498,
+  "floor_reason": "probe",
+  "steps": 1350,
+  "unmasked_self_match": 0.8932098765432098,
+  "random_mask_self_match": 0.0,
+  "probe_trace": [
+    {
+      "step": 1200,
+      "open": 0.11448774486780167,
+      "self_match": 0.890625
+    },
+    {
+      "step": 1350,
+      "open": 0.07621599733829498,
+      "self_match": 0.859375
+    }
+  ],
+  "wall_minutes": 8.087636085351308
+}
