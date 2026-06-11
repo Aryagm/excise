@@ -81,8 +81,13 @@ class ExtractConfig:
     match_scope: str = "exact"
 
     # finishing. Polish keeps the guardrail and CE terms active (a polish
-    # phase without the guardrail is where the JSON run drifted).
+    # phase without the guardrail is where the JSON run drifted). Each
+    # off-floor frontier budget additionally gets a brief polish of its own
+    # from the floor-polished snapshot before evaluation — without it the
+    # floor polish specializes the adapter and off-floor budgets read
+    # artificially low (set 0 to restore the raw post-polish frontier).
     polish_steps: int = 150
+    frontier_polish_steps: int = 60
     eval_budgets: tuple = (0.5, 0.3, 0.2, 0.1, 0.05)
     held_frac: float = 0.2
     # generation batch size for probes/evals (no grads, so it can be much

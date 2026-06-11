@@ -120,20 +120,23 @@ def fig_frontier():
         d = json.loads((ROOT / "library_runs" / "v02" /
                         f"arith_v02_long_s{s}" / "summary.json").read_text())
         v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
+    deep = json.loads((ROOT / "library_runs" / "v02" / "arith_v02_deep_s42" /
+                       "summary.json").read_text())
+    v02.append((deep["floor"] * 100, deep["frontier"][-1][1] * 100))
     ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=56, marker="D",
                color=RED, edgecolor="white", linewidth=0.8, zorder=5,
-               label="excise (automatic floor; 3 seeds)")
-    ax.annotate("found automatically,\none label-free run:\n"
-                "1.2% at 91% fidelity", xy=(1.24, 90.5),
-                xytext=(1.6, 55), fontsize=7.2, color=RED, ha="left",
+               label="excise (automatic floors)")
+    ax.annotate("found automatically, one\nlabel-free run: 0.7–1.2%\n"
+                "at 91% — still descending", xy=(0.73, 90.3),
+                xytext=(1.05, 52), fontsize=7.2, color=RED, ha="left",
                 arrowprops=dict(arrowstyle="-", color=RED, lw=0.7,
                                 shrinkB=5))
     ax.set_xscale("log")
-    ax.set_xticks([1.2, 2, 5, 10, 20, 50, 100])
-    ax.set_xticklabels(["1.2", "2", "5", "10", "20", "50", "100"])
+    ax.set_xticks([0.7, 1.2, 2, 5, 10, 20, 50, 100])
+    ax.set_xticklabels(["0.7", "1.2", "2", "5", "10", "20", "50", "100"])
     ax.set_xlabel("MLP channels kept (%)")
     ax.set_ylabel("fidelity (%)")
-    ax.set_xlim(1, 120)
+    ax.set_xlim(0.6, 120)
     ax.set_ylim(0, 112)
     ax.axhline(100, color=LGRAY, lw=0.7, ls=":", zorder=1)
     ax.legend(loc="lower right", frameon=False)

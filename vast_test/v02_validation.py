@@ -63,7 +63,7 @@ def bench_decode(model, tok_or_ids, new_tokens=64, batch_sizes=(1, 8, 64),
     return res
 
 
-def run_arith(outdir, max_steps=3000, seed=42):
+def run_arith(outdir, max_steps=3000, seed=42, min_target=0.008):
     from transformers import AutoTokenizer
     prompts = [f"{a} + {b} =" for a in range(10, 100) for b in range(10, 100)]
     t0 = time.time()
@@ -72,7 +72,8 @@ def run_arith(outdir, max_steps=3000, seed=42):
         prompts=prompts,
         config=ExtractConfig(max_new_tokens=4, batch_size=64, kl_budget=0.02,
                              probe_below=0.12, max_prompt_tokens=32,
-                             probe_n=128, max_steps=max_steps, seed=seed),
+                             probe_n=128, max_steps=max_steps, seed=seed,
+                             min_target=min_target),
     )
     r = result.receipts
     summary = {
@@ -124,7 +125,7 @@ def run_arith(outdir, max_steps=3000, seed=42):
     print("==== SUMMARY", json.dumps(summary))
 
 
-def run_json(outdir):
+def run_json(outdir, diverse=False):
     from transformers import AutoTokenizer
     MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
     tok = AutoTokenizer.from_pretrained(MODEL)
@@ -136,15 +137,56 @@ def run_json(outdir):
               "Seoul", "Quito", "Porto", "Hanoi", "Perth"]
     JOBS = ["teacher", "engineer", "nurse", "chef", "pilot", "farmer",
             "artist", "lawyer"]
+    if diverse:
+        # diversity test: same capability, 5x the prompts, varied surface
+        # forms — names/cities/jobs pools widened, several sentence
+        # templates with distractor clauses, varied instruction phrasings.
+        NAMES += ["Anya Petrova", "Jamal", "Chen Wei", "Lucia", "Tomás",
+                  "Ingrid", "Kofi", "Mei-Ling", "Dmitri", "Fatima",
+                  "Oluwaseun", "Birgit", "Ravi", "Esperanza", "Kenji",
+                  "Astrid", "Mateo", "Priya", "Sven", "Amara", "Hugo",
+                  "Noor", "Kasper", "Imani"]
+        CITIES += ["Reykjavik", "Montevideo", "Kathmandu", "Windhoek",
+                   "Tbilisi", "Da Nang", "Cusco", "Galway", "Sapporo",
+                   "Bergen", "Marrakesh", "Valparaiso", "Tallinn",
+                   "Chiang Mai", "Antigua", "Brno", "Kampala", "Yerevan"]
+        JOBS += ["software developer", "midwife", "carpenter", "barista",
+                 "geologist", "translator", "electrician", "librarian",
+                 "fisherman", "architect", "paramedic", "violinist"]
+    TEMPLATES = [
+        "{n} is a {a}-year-old {j} living in {c}.",
+        "{n}, {a}, works as a {j} in {c}.",
+        "At {a} years old, {n} has built a career as a {j}; home is {c}.",
+        "{n} moved to {c} years ago and now works there as a {j}. "
+        "{n} just turned {a}.",
+        "Meet {n}: {j} by trade, {c} resident, age {a}.",
+        "Despite the long hours, {n} ({a}) still loves being a {j}. "
+        "Friends visiting {c} often stay over.",
+        "The {j} who fixed our problem was {n} from {c} — {a} years old, "
+        "apparently.",
+        "{n} has lived in {c} since 2019, works as a {j}, and recently "
+        "celebrated turning {a}.",
+    ]
+    INSTRUCTIONS = [
+        "Extract name, age, job, and city as a JSON object. "
+        "Reply with only the JSON.",
+        "Return a JSON object with keys name, age, job, city. "
+        "Output only JSON.",
+        "Pull out the person's name, age, job and city. "
+        "Answer as a single JSON object, nothing else.",
+        "From the text below, produce JSON with fields name, age, "
+        "job, city. JSON only.",
+    ]
     rng = random.Random(0)
     prompts = []
-    for _ in range(600):
+    n_prompts = 3000 if diverse else 600
+    for _ in range(n_prompts):
         n, c, j = rng.choice(NAMES), rng.choice(CITIES), rng.choice(JOBS)
         a = rng.randint(19, 79)
-        text = f"{n} is a {a}-year-old {j} living in {c}."
-        msgs = [{"role": "user",
-                 "content": "Extract name, age, job, and city as a JSON "
-                            f"object. Reply with only the JSON.\n\n{text}"}]
+        tmpl = rng.choice(TEMPLATES) if diverse else TEMPLATES[0]
+        instr = rng.choice(INSTRUCTIONS) if diverse else INSTRUCTIONS[0]
+        text = tmpl.format(n=n, a=a, j=j, c=c)
+        msgs = [{"role": "user", "content": f"{instr}\n\n{text}"}]
         prompts.append(tok.apply_chat_template(msgs, tokenize=False,
                                                add_generation_prompt=True))
 
@@ -178,7 +220,8 @@ def run_json(outdir):
     )
     r = result.receipts
     summary = {
-        "task": "json",
+        "task": "json_diverse" if diverse else "json",
+        "n_prompts": n_prompts,
         "floor": result.floor, "floor_reason": result.floor_reason,
         "frontier": result.frontier,
         "probe_base": r["probe_base"],
@@ -204,7 +247,9 @@ def run_json(outdir):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--task", choices=["arith", "arith-long", "json", "all"],
+    ap.add_argument("--task",
+                    choices=["arith", "arith-long", "arith-deep", "json",
+                             "json-diverse", "all"],
                     default="all")
     ap.add_argument("--out", default="out")
     ap.add_argument("--seed", type=int, default=42)
@@ -214,5 +259,12 @@ if __name__ == "__main__":
     if args.task == "arith-long":
         run_arith(Path(args.out) / f"arith_v02_long_s{args.seed}",
                   max_steps=6000, seed=args.seed)
+    if args.task == "arith-deep":
+        # below the previous min_target floor: where does the capability
+        # actually stop compressing?
+        run_arith(Path(args.out) / f"arith_v02_deep_s{args.seed}",
+                  max_steps=9000, seed=args.seed, min_target=0.002)
     if args.task in ("json", "all"):
         run_json(Path(args.out) / "json_v02")
+    if args.task == "json-diverse":
+        run_json(Path(args.out) / "json_diverse", diverse=True)

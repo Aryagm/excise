@@ -29,7 +29,7 @@ def hero():
     rows = [  # (label, full B, sliced B, fidelity text, projected)
         ("Arithmetic\nQwen2.5-Math-1.5B", 1.54, 0.17, "91% output fidelity at 9× smaller", False),
         ("Arithmetic (few-shot)\nSmolLM2-1.7B", 1.75, 0.59, "97% output fidelity", False),
-        ("JSON extraction\nQwen2.5-1.5B-Instruct", 1.58, 0.49, "90% output fidelity", False),
+        ("JSON extraction\nQwen2.5-1.5B-Instruct", 1.58, 0.21, "97% output fidelity at 7.5× smaller", False),
         ("Function calling\nQwen3-4B", 4.02, 2.40, "~76% output fidelity", True),
     ]
     fig, ax = plt.subplots(figsize=(9.2, 4.0))
@@ -72,6 +72,9 @@ def frontier():
         d = json.loads((ROOT / "vast_test" / "library_runs" / "v02" /
                         f"arith_v02_long_s{s}" / "summary.json").read_text())
         v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
+    deep = json.loads((ROOT / "vast_test" / "library_runs" / "v02" /
+                       "arith_v02_deep_s42" / "summary.json").read_text())
+    v02.append((deep["floor"] * 100, deep["frontier"][-1][1] * 100))
     ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=200, marker="D",
                color=RED, edgecolor="white", linewidth=1.5, zorder=5,
                label="excise — one run, floor found automatically")
@@ -81,13 +84,14 @@ def frontier():
     ax.annotate("hand-tuned best:\n91% kept at 5%", xy=(5.05, 91.3),
                 xytext=(11, 72), fontsize=11, color=GRAY,
                 arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.2))
-    ax.annotate("excise: 1.2% of channels,\n91% fidelity — automatic",
-                xy=(1.2, 91.4), xytext=(1.5, 112), fontsize=12, color=RED,
+    ax.annotate("excise: 0.7% of channels,\n91% fidelity — automatic,\n"
+                "still descending",
+                xy=(0.71, 91.1), xytext=(1.1, 112), fontsize=12, color=RED,
                 weight="bold",
                 arrowprops=dict(arrowstyle="->", color=RED, lw=1.4))
     ax.set_xscale("log")
-    ax.set_xticks([1.2, 3, 5, 10, 30, 100])
-    ax.set_xticklabels(["1.2%", "3%", "5%", "10%", "30%", "100%"],
+    ax.set_xticks([0.7, 1.2, 3, 5, 10, 30, 100])
+    ax.set_xticklabels(["0.7%", "1.2%", "3%", "5%", "10%", "30%", "100%"],
                        fontsize=11)
     ax.tick_params(axis="y", labelsize=11)
     ax.set_xlabel("how much of the model's MLP you keep", fontsize=12,
@@ -95,7 +99,7 @@ def frontier():
     ax.set_ylabel("how much of the skill survives (%)", fontsize=12,
                   color=DARK)
     ax.axhline(100, color=GRAY, lw=0.8, ls=":")
-    ax.set_xlim(0.95, 130)
+    ax.set_xlim(0.6, 130)
     ax.set_ylim(0, 132)
     ax.legend(loc="lower right", fontsize=11, frameon=False)
     ax.grid(axis="y", alpha=0.25)

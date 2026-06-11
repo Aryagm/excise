@@ -49,11 +49,16 @@ recovery at 5\% of MLP channels} and automatically finds a
 \textbf{2.9\%-channel floor at 97\% recovery}, surpassing the staged
 pipeline's hand-tuned best (91.3\% at 5.05\%) on both axes; with the
 calibration fixes of the released library's second version the controller
-descends to a \textbf{1.2\%-channel floor} at 91\% verbatim reproduction.
+descends to \textbf{1.2\% of channels on every seed, and below 0.8\% given
+more steps} (91\% verbatim reproduction) --- still compute-bounded rather
+than behavior-bounded.
 The method needs no labels---the target is the model's own
 outputs---generalizes to function calling on Qwen3-4B (76\% verbatim
 reproduction at 40\% of channels, against a 19\% attribution baseline), and
-exports a physically smaller model: deleting the masked channels and
+data is the dominant knob it exposes: regenerating a JSON-extraction
+substrate from $5\times$ more-diverse prompts collapses its floor from
+27.5\% to \textbf{1.9\% of channels at 97\% fidelity}. It also exports a
+physically smaller model: deleting the masked channels and
 pruning the vocabulary to the capability's token support shrinks
 Qwen2.5-Math-1.5B from \textbf{1.54B to 0.17B parameters (9$\times$)} with
 no loss relative to masking, verified per run. Three negative results
@@ -205,8 +210,12 @@ back to the last passing snapshot. After the descent stops, the mask is
 frozen at the floor budget and the adapter alone is polished briefly under
 the exact binary mask (guardrail still active), removing the
 stochastic-gate train/eval mismatch. Final evaluation hardens top-$k$ masks
-at standard budgets and reports held-out fidelity, yielding the frontier
-from this single run.
+at standard budgets; because the floor polish specializes the adapter to
+the floor mask (we measured off-floor budgets reading \emph{below} the
+floor without correction), each off-floor budget is briefly re-polished
+from the floor-polished snapshot before its evaluation. The frontier this
+yields from a single run is a menu of deployable artifacts, not one point
+with decoration.
 
 \paragraph{Receipts.} Every run reports a random-mask control matched to
 the floor mask's per-layer channel counts (should be ${\approx}0$),
@@ -291,7 +300,17 @@ ${\sim}90\%$ at 40--50\% budgets.
 Second, the gap between probe fidelity on training prompts (92--98\% down to
 12\% open) and held-out fidelity quantifies a generalization phenomenon that
 exhaustively-covered tasks like arithmetic cannot exhibit; prompt diversity,
-not extraction machinery, is the binding constraint. For calibration:
+not extraction machinery, is the binding constraint. A v0.2 follow-up run
+moved that constraint and found the next one: with $6\times$ the prompts
+(all six single-turn BFCL splits, the multi-tool loader fix, and 1--2
+distractor tools shuffled into every prompt so the substrate must carry
+tool \emph{selection}), unmasked drift improved to 88.4\% despite the
+deliberately harder task, but honest dev-split probes now stop the descent
+at 60.7\% of channels (75.3\% held) after only five epochs --- function
+calling is no longer memorization-bound but \emph{step}-bound, and the
+remaining lever is training length, not data or machinery. We report the
+v0.1 numbers above because the two runs solve different tasks (one tool
+given vs.\ selection among distractors) and are not directly comparable. For calibration:
 PRISM's raw mask recovered 19.1\% at 36.2\% of channels on the 8B sibling
 model, and their best staged collimator (with a curated, schema-validated
 gold corpus and a multi-run objective search) reached 84.6\%; metric and
@@ -338,16 +357,35 @@ vocabulary too). The guardrail trace makes the v0.1 blindness quantitative
 \emph{train} batches reads $3\times10^{-4}$ (apparently perfect) while on
 anchor batches it reads $5\times10^{-3}$ to $0.15$---drift lives precisely
 where the train-batch guardrail cannot see it. Figure~\ref{fig:v02}b shows
-the recalibrated floor decision on the same run. One honest caveat survives both versions: after
-polish specializes the adapter to the floor mask, off-floor frontier points
-degrade (the 50\%-budget mask reads \emph{below} the floor mask); the floor
-point is the deployable artifact, and the frontier should be read as
-descent-time capability, not a menu of equally-polished options.
+the recalibrated floor decision on the same run. This run also exposed (and then validated the fix for) a frontier
+artifact: the floor polish specializes the adapter to the floor mask, and
+the 50\%-budget mask initially read 54\%---\emph{below} the floor point.
+With per-budget re-polish from the floor snapshot
+(\texttt{frontier\_polish\_steps}), the same budget reads 86.7\% and the
+arithmetic frontier flattens to 91--92\% across every budget from 50\%
+down to its floor.
 
-Capability breadth tracks substrate size across all four settings: narrow
-skills compress to single-digit percentages, broad structured-generation
-capabilities need a third to half the channels, consistent with PRISM's
-cross-task observations.
+\paragraph{Data diversity is the dominant knob.} The 600 training prompts
+above instantiate one sentence template, and held-out prompts share it ---
+so ``90\% at 27.5\% of channels'' partly measures template fit.
+Regenerating the same capability from 3{,}000 prompts spanning eight
+sentence forms, four instruction phrasings, and $3\times$ wider entity
+pools --- free, because the method is label-free and the teacher writes
+its own targets --- collapses the floor to \textbf{1.9\% of channels at
+97.2\%} held-out self-match, with unmasked drift down to 1.7 points, a
+flat ${\sim}98\%$ frontier at every budget, and a 1.58B $\to$ 0.21B
+(7.5$\times$) verified export. The run was still step-capped: even this
+floor is compute-bounded. What read as ``JSON extraction is a broad
+capability needing a third of the channels'' was a data-starved run.
+
+We initially read these four settings as ``capability breadth tracks
+substrate size,'' consistent with PRISM's cross-task observations. The
+diversity experiment above corrects that: substrate size measures the
+capability \emph{as exercised by the prompts}, and prompt coverage is the
+cheapest lever --- a template-limited JSON run floors at a third of the
+channels while a diverse one compresses to 2\%. Floors should be read as
+upper bounds jointly determined by data coverage and compression compute,
+not as intrinsic capability sizes.
 
 \subsection{Recalibrating the library: v0.1 $\to$ v0.2}\label{sec:v02}
 
@@ -403,6 +441,16 @@ not against an assumed 100\%; when the masked probe falls below tolerance
 twice, the gates roll back to the last passing sparsity (27.5\%).}
 \label{fig:v02}
 \end{figure}
+
+Where does the descent actually stop? We lowered the bound to 0.2\% and
+gave one seed 9{,}000 steps: it reached \textbf{0.71\% of channels
+(${\sim}1{,}800$ of 250{,}880) at 91.1\%} with the masked--unmasked probe
+gap under 2 points throughout, and exited on the step cap --- still
+descending at ${\sim}0.1$ percentage points per thousand steps. On
+saturated-coverage tasks the floor we report is bounded by adapter
+compression \emph{compute}, not by behavioral collapse; the true minimal
+circuit for 2-digit addition is somewhere below 0.7\%, $6.5\times$ under
+the hand-refined published one.
 
 One calibration lesson generalizes: with $n{=}64$ verbatim probes,
 binomial noise alone is ${\pm}4$ points, and our first attempt at a

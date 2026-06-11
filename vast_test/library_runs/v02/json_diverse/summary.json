@@ -1,0 +1,90 @@
+{
+  "task": "json_diverse",
+  "n_prompts": 3000,
+  "floor": 0.019328352063894272,
+  "floor_reason": "max_steps",
+  "frontier": [
+    [
+      0.5,
+      0.98
+    ],
+    [
+      0.3,
+      0.98
+    ],
+    [
+      0.2,
+      0.9783333333333334
+    ],
+    [
+      0.1,
+      0.985
+    ],
+    [
+      0.05,
+      0.9783333333333334
+    ],
+    [
+      0.0193,
+      0.9716666666666667
+    ]
+  ],
+  "probe_base": 0.984375,
+  "base_self_match": 0.9866666666666667,
+  "unmasked_self_match": 0.97,
+  "random_mask_self_match": 0.0,
+  "steps": 3000,
+  "wall_minutes": 30.46579124132792,
+  "vocab_support_size": 22205,
+  "guardrail_trace_tail": [
+    {
+      "step": 3136,
+      "src": "anchor",
+      "kl": 0.019359836354851723
+    },
+    {
+      "step": 3138,
+      "src": "train",
+      "kl": 0.0005233515403233469
+    },
+    {
+      "step": 3140,
+      "src": "anchor",
+      "kl": 0.0032043340615928173
+    },
+    {
+      "step": 3142,
+      "src": "train",
+      "kl": 0.0005476011428982019
+    },
+    {
+      "step": 3144,
+      "src": "anchor",
+      "kl": 0.0021181870251893997
+    },
+    {
+      "step": 3146,
+      "src": "train",
+      "kl": 0.0007387688965536654
+    },
+    {
+      "step": 3148,
+      "src": "anchor",
+      "kl": 0.0017998834373429418
+    },
+    {
+      "step": 3150,
+      "src": "train",
+      "kl": 0.0008131840149872005
+    }
+  ],
+  "v01_reference": {
+    "floor": 0.339,
+    "held_at_floor": 0.9,
+    "unmasked_drift": 0.558
+  },
+  "params_before": 1580643840,
+  "params_after_slice_prune": 210736640,
+  "sliced_self_match": 0.984375,
+  "pruned_self_match": 0.9921875
+}

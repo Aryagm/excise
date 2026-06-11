@@ -1,0 +1,26 @@
+{
+  "task": "fc_v02",
+  "n_prompts": 2061,
+  "floor": 0.6072630882263184,
+  "floor_reason": "probe",
+  "frontier": [
+    [
+      0.6073,
+      0.7529880478087649
+    ]
+  ],
+  "probe_base": 0.96875,
+  "base_self_match": 0.9760956175298805,
+  "unmasked_self_match": 0.8844621513944223,
+  "random_mask_self_match": 0.0,
+  "steps": 1200,
+  "wall_minutes": 72.60397260189056,
+  "vocab_support_size": 101330,
+  "total_minutes": 72.62290860017141,
+  "v01_reference": {
+    "held_at_50": 0.775,
+    "held_at_40": 0.763,
+    "unmasked": 0.8625,
+    "train_prompts": 320
+  }
+}

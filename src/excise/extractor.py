@@ -544,19 +544,56 @@ def extract(model_or_name, prompts, tokenizer=None,
         torch.nn.utils.clip_grad_norm_(lora_params, 1.0)
         opt.step()
 
-    # ---- frontier + receipts
+    # ---- frontier + receipts. The floor polish specializes the adapter to
+    # the floor mask, which silently degrades every OTHER budget's eval (we
+    # measured a 50%-budget mask reading BELOW the floor mask). Each
+    # frontier point therefore gets a brief polish of its own from the
+    # floor-polished snapshot, so the frontier is a menu of deployable
+    # artifacts, not a single point with decoration.
+    snap = {n: p.detach().clone() for n, p in model.named_parameters()
+            if p.requires_grad}
+
+    def restore():
+        with torch.no_grad():
+            for n, p in model.named_parameters():
+                if n in snap:
+                    p.copy_(snap[n])
+
     frontier = []
-    for b in sorted(set(list(cfg.eval_budgets) + [round(floor, 4)]),
+    floor_key = round(floor, 4)
+    for b in sorted(set(list(cfg.eval_budgets) + [floor_key]),
                     reverse=True):
         if b < floor * 0.99:
             continue
         k = max(1, int(round(b * mlp_map.n_channels)))
-        acc = self_match(model, tok, held, hooks, "mask",
-                         gates.topk_mask(k).to(device), bs=eval_bs,
+        bmask = gates.topk_mask(k).to(device)
+        restore()
+        if b != floor_key and cfg.frontier_polish_steps:
+            for _ in range(cfg.frontier_polish_steps):
+                if bi == 0:
+                    rng.shuffle(border)
+                ids, labs, attn, pos, P, O = batches[border[bi]]
+                tp, ti, tr = cache[border[bi]]
+                bi = (bi + 1) % len(batches)
+                hooks.mode, hooks.mask = "mask", bmask
+                logits = model(input_ids=ids, attention_mask=attn,
+                               position_ids=pos,
+                               logits_to_keep=O + 1).logits
+                s_lp, m = out_logprobs(logits, labs, P)
+                kl = sparse_kl(s_lp, tp, ti, tr)
+                ce = -s_lp.gather(-1,
+                                  labs[:, P:][m].unsqueeze(-1)).mean()
+                opt.zero_grad(set_to_none=True)
+                (kl + cfg.ce_weight * ce).backward()
+                hooks.mode, hooks.mask = "off", None
+                torch.nn.utils.clip_grad_norm_(lora_params, 1.0)
+                opt.step()
+        acc = self_match(model, tok, held, hooks, "mask", bmask, bs=eval_bs,
                          max_new_tokens=cfg.max_new_tokens,
                          scope=cfg.match_scope)
         frontier.append((b, acc))
         log(f"[excise] eval@{b:.2%} held self-match={acc:.4f}")
+    restore()                  # final artifact = the floor-polished adapter
 
     # Layer-profile-matched random control: same number of channels kept in
     # each layer as the floor mask, chosen at random — a stronger null than
@@ -584,6 +621,7 @@ def extract(model_or_name, prompts, tokenizer=None,
         "floor": floor, "floor_reason": floor_reason, "steps": step,
         "probe_src": probe_src,
         "probe_base": probe_base,
+        "frontier_polish_steps": cfg.frontier_polish_steps,
         "base_self_match": base,
         "unmasked_self_match": unmasked,
         "random_mask_self_match": rand_acc,

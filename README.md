@@ -54,25 +54,31 @@ Measured results (single RTX 4090, details in the paper):
 
 | Capability | Model (architecture) | Kept channels | Fidelity | Exported size |
 |---|---|---|---|---|
-| 2-digit arithmetic | Qwen2.5-Math-1.5B (Qwen2) | **1.2%** of MLP | 91% verbatim match | **1.54B → 0.17B (9.0×)** |
+| 2-digit arithmetic | Qwen2.5-Math-1.5B (Qwen2) | **0.7%** of MLP | 91% verbatim match | **1.54B → 0.17B (9.0×)** |
 | Arithmetic, few-shot | SmolLM2-1.7B (Llama) | 7.4% of MLP | 97.2% verbatim match | 1.75B → 0.59B (3.0×) |
-| JSON extraction | Qwen2.5-1.5B-Instruct (Qwen2) | 27.5% of MLP | 90.0% verbatim match | 1.58B → 0.49B (3.2×) |
+| JSON extraction | Qwen2.5-1.5B-Instruct (Qwen2) | **1.9%** of MLP | 97.2% verbatim match | 1.58B → 0.21B (7.5×) |
 | Function calling (BFCL) | Qwen3-4B (Qwen3) | 40% of MLP | ~76% verbatim match | 4.0B → ~2.4B projected |
 
 The arithmetic row uses v0.2's recalibrated controller and vocabulary
 pruning (the capability touches 1,746 of 151,936 token ids; the embedding
-shrinks accordingly). On the research benchmark against PRISM's staged
-pipeline, a single run still reaches 100.9% task-accuracy recovery at 5% of
-channels — see the paper.
+shrinks accordingly), and both sub-1% floors exited on the step cap with
+behavior probes still passing — the true floors are lower. On the research
+benchmark against PRISM's staged pipeline, a single run still reaches
+100.9% task-accuracy recovery at 5% of channels — see the paper.
 
-The JSON row is also the v0.2 validation story: under v0.1 its report
-flagged catastrophic unmasked drift (55.8% self-match). The audit traced
-the root cause to a biased sparse-KL cache that made the guardrail sharpen
-the model it was meant to anchor, compounded by a guardrail-free polish
-phase. v0.2 (binned KL + off-task anchor texts + guardrail through polish)
-reruns the identical task: drift drops to 8 points (88.3% vs a 96.7% base
-decode-noise ceiling) and the floor *improves* to 27.5%. The receipts
-flagged it; the receipts now confirm the fix.
+**Data is the dominant knob.** The JSON row above is 3,000 varied prompts;
+the same capability from 600 single-template prompts floors at 27.5% of
+channels at 90% — a 14× difference from data alone. The method is
+label-free, so diverse prompts are the cheapest upgrade there is: the
+teacher writes its own targets.
+
+JSON is also the v0.2 validation story: under v0.1 its report flagged
+catastrophic unmasked drift (55.8% self-match). The audit traced the root
+cause to a biased sparse-KL cache that made the guardrail sharpen the model
+it was meant to anchor, compounded by a guardrail-free polish phase. v0.2
+(binned KL + off-task anchor texts + guardrail through polish) cut drift to
+8 points on the same data, and the diverse-data run above cuts it to under
+2. The receipts flagged it; the receipts now confirm the fix.
 
 - **Label-free.** The target is the model's own unmasked output distribution.
   You provide prompts; nothing else.
