@@ -97,7 +97,7 @@ model away from the base it is meant to anchor.
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.54\textwidth]{figures/frontier.pdf}
-\caption{\textbf{Two-digit addition runs on under 1\% of MLP channels, found
+\caption{\textbf{Two-digit addition runs on 0.7--1.2\% of MLP channels, found
 automatically in one label-free run.} Qwen2.5-Math-1.5B. Red diamonds are
 \texttt{excise}'s controller stopping points: three configured lower-bound
 exits at 1.2\% of channels and one extended step-cap exit at 0.71\%, plotted
@@ -279,7 +279,7 @@ model = load_sliced("substrate/sliced")              # round-trips
 \noindent Code, configs, and per-run receipts:
 \texttt{github.com/Aryagm/excise}.
 
-\subsection{Arithmetic: extracting addition into 1\% of the network}
+\subsection{Arithmetic: extracting addition into around 1\% of the network}
 
 We use PRISM's testbed: 2-digit addition on Qwen2.5-Math-1.5B
 \citep{qwen25math} (canonical prompt \texttt{"a + b ="}, exhaustive sums, 10\%
@@ -287,11 +287,14 @@ held out, 250{,}880 MLP channels), zero-isolation deactivation, and recovery
 $=$ masked accuracy / base accuracy (base: 97.4\%). Table~\ref{tab:arith}
 gives the key points, and Figure~\ref{fig:frontier} places the library's
 controller stopping points against the staged pipeline.
+Table~\ref{tab:arith} reports task-accuracy recovery frontier points; the
+lower controller exits in Figure~\ref{fig:frontier} report held-out verbatim
+self-match, a stricter metric.
 
 \begin{table}[h]
 \centering\small
 \caption{\textbf{Arithmetic extraction.} Every seed beats the staged
-pipeline at 5\%, and every controller-found floor is at or below the
+pipeline at 5\%, and the lowest $\geq$95\% recovery point is at or below the
 hand-refined minimal circuit with higher recovery. The unmasked guardrail
 held base accuracy exactly (97.4\%) in all runs.}
 \label{tab:arith}
@@ -306,17 +309,17 @@ PRISM refined minimal circuit (manual) & 4.65\% & 90.6\% \\
 random mask control (ours) & 5\% & 0.0\% \\
 grad$\times$act attribution mask (ours) & 5\% & 0.3\% \\
 \textbf{excise, one run} (seed 42 / 43 / 44) & 5\% & \textbf{100.9 / 100.4 / 99.5\%} \\
-\textbf{excise, controller floor} & \textbf{2.9 / 3.8 / 4.1\%} & 97.2 / 95.4 / 97.9\% \\
+\textbf{excise, lowest $\geq$95\% recovery point} & \textbf{2.9 / 3.8 / 4.1\%} & 97.2 / 95.4 / 97.9\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Two ablations (Figure~\ref{fig:ablations}): restricting the adapter to MLP
 projections (the strictest frozen-scaffold contract) costs ${\sim}3$ points
-at 5\% and runs 25\% faster; removing labels entirely (pure self-distillation,
-$\beta_\mathrm{ce}{=}0$) still reaches 96.7\% recovery but floors shallower
-(5.3\%). Labels are not needed for validity, only for the last ${\sim}2\%$ of
-budget.
+at 5\% and runs 25\% faster; removing the hard-token cross-entropy term
+($\beta_\mathrm{ce}{=}0$) still reaches 96.7\% recovery but floors shallower
+(5.3\%). Hard-token CE is not needed for validity, only for the last
+${\sim}2\%$ of budget.
 
 \paragraph{The reported floor is set by compute, not by behavior.} All three seeds
 descend to the controller's configured lower bound of 1.2\% of channels, with

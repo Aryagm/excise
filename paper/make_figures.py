@@ -230,7 +230,7 @@ def fig_miscalibration():
 # ------------------------------------------------------- ablations
 def fig_ablations():
     runs = [("seed 42", "s42"), ("seed 43", "s43"), ("seed 44", "s44"),
-            ("MLP-only\nadapter", "mlponly"), ("label-free\n($\\beta_{ce}{=}0$)", "ce0")]
+            ("MLP-only\nadapter", "mlponly"), ("no hard-token CE\n($\\beta_{ce}{=}0$)", "ce0")]
     fig, ax = plt.subplots(figsize=(4.6, 2.7))
     labels, recs, floors = [], [], []
     for label, name in runs:
