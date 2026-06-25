@@ -38,8 +38,8 @@ is, and lets you delete the rest.
    channels exactly as fast as behavior allows — measured by *actually
    generating*, not by loss curves (losses lie at high sparsity; we measured
    a 35-point silent failure).
-3. **Export.** The run stops at the floor it discovered, hands you the whole
-   size-vs-fidelity curve, an integrity report, and — via
+3. **Export.** The run stops at the controller's reported point, hands you the
+   whole size-vs-fidelity curve, an integrity report, and — via
    `export_sliced()` — a physically smaller model with the dead weights
    deleted.
 
@@ -61,10 +61,11 @@ Measured results (single RTX 4090, details in the paper):
 
 The arithmetic row uses v0.2's recalibrated controller and vocabulary
 pruning (the capability touches 1,746 of 151,936 token ids; the embedding
-shrinks accordingly), and both sub-1% floors exited on the step cap with
-behavior probes still passing — the true floors are lower. On the research
-benchmark against PRISM's staged pipeline, a single run still reaches
-100.9% task-accuracy recovery at 5% of channels — see the paper.
+shrinks accordingly). Throughout, "floor" means the controller's reported
+stopping point; lower-bound and step-cap exits are upper bounds on the true
+behavioral-collapse minimum, not claims that collapse was reached. On the
+research benchmark against PRISM's staged pipeline, a single run still
+reaches 100.9% task-accuracy recovery at 5% of channels — see the paper.
 
 **Data is the dominant knob.** The JSON row above is 3,000 varied prompts;
 the same capability from 600 single-template prompts floors at 27.5% of
@@ -83,7 +84,9 @@ it was meant to anchor, compounded by a guardrail-free polish phase. v0.2
 - **Label-free.** The target is the model's own unmasked output distribution.
   You provide prompts; nothing else.
 - **The whole size-fidelity frontier from one run.** An adaptive controller
-  closes channels as fast as behavior allows and stops at the floor itself.
+  closes channels as fast as behavior allows and reports the stopping point
+  it found, including whether the run ended by probe, lower bound, or step
+  cap.
 - **Behavior probes, not loss curves.** Distribution-level KL reads healthy
   while generation quality collapses at high sparsity (we measured a 35-point
   silent failure). The controller decides by actually generating.

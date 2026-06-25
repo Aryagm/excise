@@ -40,7 +40,7 @@ publishing — things only you can/should do).
 ## Release-day command block (run in order)
 
 ```bash
-# 1. PyPI (dist/ already built: excise-0.1.0 sdist + wheel)
+# 1. PyPI (build fresh from pyproject.toml, currently excise-0.2.0)
 pip install twine && twine upload dist/*
 
 # 2. Flip public
@@ -50,9 +50,9 @@ gh repo edit Aryagm/excise --visibility public
 #    pending" comment from the Install section, commit, push.
 
 # 4. Tag + GitHub release
-git tag v0.1.0 && git push origin v0.1.0
-gh release create v0.1.0 --title "excise v0.1.0" \
-    --notes-file .github/release-notes-v0.1.0.md
+git tag v0.2.0 && git push origin v0.2.0
+gh release create v0.2.0 --title "excise v0.2.0" \
+    --notes-file .github/release-notes-v0.2.0.md
 
 # 5. Post the thread (below), then Show HN + r/MachineLearning [P]
 ```
