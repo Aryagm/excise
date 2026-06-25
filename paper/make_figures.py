@@ -69,7 +69,9 @@ def fig_method():
                 fontsize=8.2, weight="bold",
                 color=RED if accent else INK)
         for i, ln in enumerate(lines):
-            ax.text(x + w / 2, y + h - 7.6 - 4.2 * i, ln, ha="center",
+            line_y = (y + h - 6.4 - 3.0 * i
+                      if len(lines) > 3 else y + h - 7.6 - 4.2 * i)
+            ax.text(x + w / 2, line_y, ln, ha="center",
                     va="center", fontsize=7.0, color=INK)
 
     def arrow(x1, y1, x2, y2, label=None, dy=2.0):
@@ -84,7 +86,7 @@ def fig_method():
     box(1, 9, 17, 17, "frozen base $M$",
         ["greedy outputs $\\hat{y}$", "top-$k$ dists,", "cached once"])
     box(29, 9, 21, 17, "joint student", ["LoRA $\\theta$ (rank 32)",
-        "hard-concrete gates $z$", "binned KL + anchored guardrail"],
+        "hard-concrete gates $z$", "binned KL + anchored", "guardrail"],
         accent=True)
     box(60, 9, 22, 17, "adaptive controller",
         ["target $\\downarrow$ while KL ok",
@@ -269,14 +271,15 @@ def fig_v02():
     an = [(g["step"], g["kl"]) for g in r["guardrail_trace"]
           if g["src"] == "anchor"]
     a1.plot(*zip(*tr), "-", color=GRAY, lw=1.0,
-            label="train batches (all a train-only guardrail sees)")
+            label="train batches")
     a1.plot(*zip(*an), "-", color=RED, lw=1.2,
-            label="off-task anchors (where drift lives)")
+            label="off-task anchors")
     a1.set_yscale("log")
     a1.set_xlabel("step")
     a1.set_ylabel("guardrail KL to base")
     a1.set_title("(a) the same adapter, two guardrail views", fontsize=8.2)
-    a1.legend(frameon=False, loc="upper right", fontsize=6.8)
+    a1.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.24),
+              ncol=2, fontsize=6.4)
 
     # (b) probe trace: masked vs unmasked-at-same-step, with the rollback
     opens = [p["open"] * 100 for p in r["probe_trace"]]
@@ -289,8 +292,8 @@ def fig_v02():
     floor = r["floor"] * 100
     a2.axvline(floor, color=GOLD, lw=1.1, ls=":")
     a2.annotate(f"floor {floor:.1f}%\n(rolled back to\nlast passing probe)",
-                xy=(floor, 38), xytext=(floor + 9, 22), fontsize=6.8,
-                color=INK,
+                xy=(floor, 40), xytext=(floor + 13, 48), fontsize=6.8,
+                color=INK, ha="right", va="center",
                 arrowprops=dict(arrowstyle="-", color=GOLD, lw=0.8))
     a2.invert_xaxis()
     a2.set_xlabel("MLP channels open (%)")
