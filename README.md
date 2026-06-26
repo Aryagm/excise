@@ -28,7 +28,7 @@ is, and lets you delete the rest.
 
 ## How it works, in three steps
 
-<p align="center"><img src="assets/method.png" width="95%"></p>
+<p align="center"><img src="paper/figures/method.png" width="95%" alt="Excise method diagram from the paper"></p>
 
 1. **The model teaches itself.** You provide prompts that exercise the
    capability — no labels. The frozen model's own outputs become the target.
@@ -48,7 +48,7 @@ is, and lets you delete the rest.
 One 12-minute run on a $0.40/hr GPU vs. the published four-stage pipeline,
 on that pipeline's own benchmark:
 
-<p align="center"><img src="assets/frontier.png" width="85%"></p>
+<p align="center"><img src="paper/figures/frontier.png" width="85%" alt="Arithmetic frontier figure from the paper"></p>
 
 Measured results (single RTX 4090, details in the paper):
 
@@ -80,6 +80,23 @@ it was meant to anchor, compounded by a guardrail-free polish phase. v0.2
 (binned KL + off-task anchor texts + guardrail through polish) cut drift to
 8 points on the same data, and the diverse-data run above cuts it to under
 2. The receipts flagged it; the receipts now confirm the fix.
+
+<details>
+<summary>More figures from the paper</summary>
+
+<p align="center"><img src="paper/figures/ablations.png" width="82%" alt="Arithmetic seed stability and ablation results"></p>
+
+<p align="center"><img src="paper/figures/function_calling.png" width="92%" alt="Function-calling probe trace and held-out evaluation"></p>
+
+<p align="center"><img src="paper/figures/diversity.png" width="92%" alt="Prompt diversity comparison for JSON extraction"></p>
+
+<p align="center"><img src="paper/figures/params.png" width="92%" alt="Parameter composition before and after extraction"></p>
+
+<p align="center"><img src="paper/figures/v02_calibration.png" width="92%" alt="Guardrail calibration trace"></p>
+
+<p align="center"><img src="paper/figures/miscalibration.png" width="82%" alt="KL miscalibration failure mode"></p>
+
+</details>
 
 - **Label-free.** The target is the model's own unmasked output distribution.
   You provide prompts; nothing else.
