@@ -35,7 +35,7 @@ on the 3,000-prompt diverse run.
 ## Install
 
 ```bash
-pip install excise
+pip install "excise @ git+https://github.com/Aryagm/excise.git@v0.2.0"
 ```
 
 ## Known limitations

@@ -7,8 +7,8 @@ publishing — things only you can/should do).
 
 - ☐ Create the GitHub repo (paper + README reference `github.com/Aryagm/excise`;
   edit both if the org/name differs) and `git push`.
-- ☐ Confirm the package name `excise` (PyPI name is free as of 2026-06-09).
-  Renaming = `pyproject.toml`, `src/excise/`, README, paper, this file.
+- ☐ PyPI release is deferred until account access is restored. For launch,
+  README and release notes use pip's direct GitHub install path.
 - ☑ MIT license, CI workflow (CPU tests), .gitignore.
 
 - ☐ After flipping the repo public, restore the CI badge at the top of
@@ -21,8 +21,9 @@ publishing — things only you can/should do).
   JSON extraction).
 - ☑ GPU-validated end-to-end (dogfood + breadth runs; see receipts in
   vast_test/).
-- ☐ `pip install build twine && python -m build && twine upload dist/*`
-  (or set up PyPI trusted publishing from the repo).
+- ☐ When PyPI access is restored:
+  `pip install build twine && python -m build && twine upload dist/*`
+  (or set up trusted publishing from the repo).
 
 ## Paper
 
@@ -40,21 +41,17 @@ publishing — things only you can/should do).
 ## Release-day command block (run in order)
 
 ```bash
-# 1. PyPI (build fresh from pyproject.toml, currently excise-0.2.0)
-pip install twine && twine upload dist/*
-
-# 2. Flip public
+# 1. Flip public
 gh repo edit Aryagm/excise --visibility public
 
-# 3. Restore CI badge in README (markdown above), remove "PyPI release
-#    pending" comment from the Install section, commit, push.
+# 2. Restore CI badge in README (markdown above), commit, push.
 
-# 4. Tag + GitHub release
+# 3. Tag + GitHub release
 git tag v0.2.0 && git push origin v0.2.0
 gh release create v0.2.0 --title "excise v0.2.0" \
     --notes-file .github/release-notes-v0.2.0.md
 
-# 5. Post the thread (below), then Show HN + r/MachineLearning [P]
+# 4. Post the thread (below), then Show HN + r/MachineLearning [P]
 ```
 
 PRISM-authors email draft: `release_private/prism_authors_email.md`
@@ -64,7 +61,7 @@ PRISM-authors email draft: `release_private/prism_authors_email.md`
 
 1/ We built `excise`: point it at an open LLM + a pile of prompts, get back
 a *smaller model* that does that one thing. No labels, no pipeline, one
-command. pip install excise 🧵
+command. Install from GitHub with pip. 🧵
 
 2/ A 1.5B math model does 2-digit addition through just 2.9% of its MLP
 channels. excise finds that floor automatically — and deletes the rest:

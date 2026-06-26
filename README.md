@@ -119,9 +119,24 @@ it was meant to anchor, compounded by a guardrail-free polish phase. v0.2
 
 ## Install
 
+PyPI release is pending. For now, install directly from GitHub:
+
 ```bash
-pip install excise          # PyPI release pending; for now:
-pip install git+https://github.com/Aryagm/excise
+pip install "excise @ git+https://github.com/Aryagm/excise.git@v0.2.0"
+```
+
+For the exact version used in the paper:
+
+```bash
+pip install "excise @ git+https://github.com/Aryagm/excise.git@b0eb63aabe3c"
+```
+
+For development:
+
+```bash
+git clone https://github.com/Aryagm/excise
+cd excise
+pip install -e .
 ```
 
 ## CLI
