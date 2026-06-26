@@ -186,7 +186,7 @@ def fig_frontier():
     ax.add_patch(FancyArrowPatch(
         old_pt, (v02_x, v02_y), arrowstyle="-|>", mutation_scale=12,
         lw=1.55, color=RED, shrinkA=9, shrinkB=12,
-        connectionstyle="arc3,rad=0.08", zorder=2))
+        connectionstyle="arc3,rad=-0.12", zorder=2))
     ax.add_patch(FancyArrowPatch(
         log_path((v02_x, v02_y), deep_pt, 0.30),
         log_path((v02_x, v02_y), deep_pt, 0.72),
@@ -205,7 +205,7 @@ def fig_frontier():
     labels = [
         (old_pt, "v0.1\n7.6%, 89.0%", CONTROL, 10, -18, "left"),
         ((v02_x, v02_y), f"v0.2 aggregate\n1.2%, {v02_y:.1f}%",
-         RED, 16, 28, "left"),
+         RED, 16, 44, "left"),
         (deep_pt, "extended\n0.71%, 91.1%", EXCISE_DARK, 8, -10, "left"),
         ((5.75, 29.0), "raw mask\n5.75%, 29.0%", PRISM, 12, -12, "left"),
         ((90.61, 99.53), "raw, broad\n90.61%, 99.5%", PRISM, -14, -14,
