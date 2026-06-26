@@ -188,10 +188,10 @@ def fig_frontier():
         lw=1.55, color=RED, shrinkA=9, shrinkB=12,
         connectionstyle="arc3,rad=0.08", zorder=2))
     ax.add_patch(FancyArrowPatch(
-        log_path(old_pt, (v02_x, v02_y), 0.52),
-        log_path(old_pt, (v02_x, v02_y), 0.70),
+        log_path((v02_x, v02_y), deep_pt, 0.30),
+        log_path((v02_x, v02_y), deep_pt, 0.72),
         arrowstyle="-|>", mutation_scale=9,
-        lw=1.0, color=RED, shrinkA=0, shrinkB=0,
+        lw=1.0, color=EXCISE_DARK, shrinkA=0, shrinkB=0,
         connectionstyle="arc3,rad=0.08", zorder=2))
     ax.scatter([old_pt[0]], [old_pt[1]], s=76, color=CONTROL,
                edgecolor="white", linewidth=1.0, zorder=5)
