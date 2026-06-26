@@ -262,7 +262,9 @@ behavior), two of which we hit and one we inherited from PRISM's analysis.
 \section{Results}\label{sec:results}
 
 Every experiment ran on a single RTX 4090, through the released library's
-public interface. This is the entire workflow:
+public interface. Arithmetic gives the controlled comparison; JSON extraction
+and function calling test whether the same extraction machinery behaves on
+practical prompt-defined capabilities. This is the entire workflow:
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[style=py]
