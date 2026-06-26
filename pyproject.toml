@@ -25,6 +25,12 @@ dependencies = [
     "numpy",
 ]
 
+[project.optional-dependencies]
+paper = [
+    "matplotlib>=3.8",
+    "adjustText>=1.4",
+]
+
 [project.urls]
 Repository = "https://github.com/Aryagm/excise"
 

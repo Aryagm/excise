@@ -3,6 +3,7 @@
 Styled for print: serif/STIX typography, restrained palette, subtle grids."""
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -10,6 +11,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+try:
+    from adjustText import adjust_text
+except ImportError as exc:
+    raise SystemExit(
+        "paper/make_figures.py needs the paper figure extras: "
+        "pip install '.[paper]'"
+    ) from exc
 
 ROOT = Path(__file__).resolve().parent.parent / "vast_test"
 OUT = Path(__file__).resolve().parent / "figures"
@@ -156,20 +164,34 @@ def fig_frontier():
     v02_max = max(p[1] for p in v02_runs)
     deep_pt = (deep["floor"] * 100, deep["frontier"][-1][1] * 100)
     old_pt = (7.6, 89.0)
-    prism_pt = (5.05, 91.33)
+    prism = [(5.75, 29.0), (90.61, 99.53), (5.05, 91.33), (4.65, 90.6)]
+
+    def display_offset(point, dx_pt=0, dy_pt=0):
+        x_disp, y_disp = ax.transData.transform(point)
+        scale = fig.dpi / 72.0
+        return ax.transData.inverted().transform(
+            (x_disp + dx_pt * scale, y_disp + dy_pt * scale))
+
+    def log_path(p0, p1, t):
+        log_x = (1 - t) * math.log10(p0[0]) + t * math.log10(p1[0])
+        return 10 ** log_x, (1 - t) * p0[1] + t * p1[1]
 
     ax.set_xscale("log")
-    ax.set_xlim(0.6, 9.0)
-    ax.set_ylim(88.0, 92.7)
-    ax.set_xticks([0.7, 1.2, 2, 5, 8])
-    ax.set_xticklabels(["0.7", "1.2", "2", "5", "8"])
-    ax.set_yticks([88, 89, 90, 91, 92])
+    ax.set_xlim(0.6, 120)
+    ax.set_ylim(0, 112)
+    ax.set_xticks([0.7, 1.2, 2, 5, 10, 20, 50, 100])
+    ax.set_xticklabels(["0.7", "1.2", "2", "5", "10", "20", "50", "100"])
+    ax.set_yticks([0, 20, 40, 60, 80, 100])
     ax.axvspan(0.65, 1.3, color=EXCISE_LIGHT, zorder=0)
-    ax.text(0.82, 92.35, "around 1%", color=EXCISE_DARK,
-            fontsize=6.9, ha="center")
     ax.add_patch(FancyArrowPatch(
         old_pt, (v02_x, v02_y), arrowstyle="-|>", mutation_scale=12,
         lw=1.55, color=RED, shrinkA=9, shrinkB=12,
+        connectionstyle="arc3,rad=0.08", zorder=2))
+    ax.add_patch(FancyArrowPatch(
+        log_path(old_pt, (v02_x, v02_y), 0.52),
+        log_path(old_pt, (v02_x, v02_y), 0.70),
+        arrowstyle="-|>", mutation_scale=9,
+        lw=1.0, color=RED, shrinkA=0, shrinkB=0,
         connectionstyle="arc3,rad=0.08", zorder=2))
     ax.scatter([old_pt[0]], [old_pt[1]], s=76, color=CONTROL,
                edgecolor="white", linewidth=1.0, zorder=5)
@@ -177,25 +199,49 @@ def fig_frontier():
                edgecolor="white", linewidth=1.0, zorder=6)
     ax.scatter([deep_pt[0]], [deep_pt[1]], s=76, marker="D",
                color=EXCISE_DARK, edgecolor="white", linewidth=1.0, zorder=7)
-    ax.scatter([prism_pt[0]], [prism_pt[1]], s=48, marker="s",
+    ax.scatter([p[0] for p in prism], [p[1] for p in prism], s=48, marker="s",
                facecolor="white", edgecolor=PRISM, linewidth=1.15, zorder=5)
 
-    ax.text(6.35, 90.25, "v0.1\n7.6%, 89.0%", ha="center", va="center",
-            fontsize=6.9, color=CONTROL)
-    ax.annotate(f"v0.2 aggregate\n1.2%, {v02_y:.1f}%",
-                (v02_x, v02_y), xytext=(17, 9), textcoords="offset points",
-                ha="left", va="bottom", fontsize=7.0, color=RED)
-    ax.annotate("extended\n0.71%, 91.1%", deep_pt, xytext=(11, -22),
-                textcoords="offset points", ha="left", va="top",
-                fontsize=6.6, color=EXCISE_DARK)
-    ax.annotate("PRISM\n~5%", prism_pt, xytext=(18, 9),
-                textcoords="offset points", ha="left", va="bottom",
-                fontsize=6.6, color=PRISM)
-    ax.text(2.45, 89.55, "6.3x lower floor\nwith higher recovery",
-            fontsize=7.2, color=INK, ha="left", va="center")
+    labels = [
+        (old_pt, "v0.1\n7.6%, 89.0%", CONTROL, 10, -18, "left"),
+        ((v02_x, v02_y), f"v0.2 aggregate\n1.2%, {v02_y:.1f}%",
+         RED, 16, 28, "left"),
+        (deep_pt, "extended\n0.71%, 91.1%", EXCISE_DARK, 8, -10, "left"),
+        ((5.75, 29.0), "raw mask\n5.75%, 29.0%", PRISM, 12, -12, "left"),
+        ((90.61, 99.53), "raw, broad\n90.61%, 99.5%", PRISM, -14, -14,
+         "right"),
+        ((5.05, 91.33), "staged collimation\n5.05%, 91.3%", PRISM,
+         12, 20, "left"),
+        ((4.65, 90.6), "refined MVC\n4.65%, 90.6%", PRISM, -18, -22,
+         "right"),
+    ]
+    texts, target_x, target_y = [], [], []
+    for point, label, color, dx, dy, ha in labels:
+        x, y = display_offset(point, dx, dy)
+        texts.append(ax.text(x, y, label, ha=ha, va="center",
+                             fontsize=6.5 if color != INK else 7.1,
+                             color=color, zorder=8))
+        target_x.append(point[0])
+        target_y.append(point[1])
+    adjust_text(
+        texts, ax=ax, target_x=target_x, target_y=target_y,
+        x=[old_pt[0], v02_x, deep_pt[0], *[p[0] for p in prism]],
+        y=[old_pt[1], v02_y, deep_pt[1], *[p[1] for p in prism]],
+        expand=(1.08, 1.16), force_text=(0.08, 0.16),
+        force_static=(0.08, 0.12), force_pull=(0.01, 0.02),
+        max_move=(7, 7), iter_lim=250, min_arrow_len=7,
+        arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.45,
+                        shrinkA=2, shrinkB=3))
+    ax.annotate("6.3x lower floor\nwith higher recovery",
+                xy=log_path(old_pt, (v02_x, v02_y), 0.58),
+                xytext=(0, -46), textcoords="offset points",
+                ha="center", va="top", fontsize=7.1, color=INK,
+                arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.55,
+                                shrinkA=2, shrinkB=3))
     ax.set_xlabel("MLP channels kept at controller exit, % (log scale)",
                   labelpad=5)
-    ax.set_ylabel("held-out verbatim self-match (%)", labelpad=5)
+    ax.set_ylabel("fidelity / reported recovery (%)", labelpad=5)
+    ax.axhline(100, color=LGRAY, lw=0.7, ls=":", zorder=1)
 
     tab.axis("off")
     tab.set_xlim(0, 1)
