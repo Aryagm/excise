@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
+from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 ROOT = Path(__file__).resolve().parent.parent / "vast_test"
@@ -210,6 +211,20 @@ def fig_frontier():
     mark_label((4.65, 90.6), "refined MVC\n4.65%, 90.6%",
                PRISM, 13, -14, ha="left", va="top", fontsize=5.6,
                leader=True)
+
+    legend_handles = [
+        Line2D([], [], linestyle="None", marker="D", markersize=5.0,
+               markerfacecolor=RED, markeredgecolor="white",
+               markeredgewidth=0.6, label="excise"),
+        Line2D([], [], linestyle="None", marker="s", markersize=5.0,
+               markerfacecolor="white", markeredgecolor=PRISM,
+               markeredgewidth=1.0, label="PRISM refs"),
+    ]
+    ax.legend(handles=legend_handles, loc="lower right",
+              bbox_to_anchor=(0.995, 0.03), frameon=True, fancybox=False,
+              framealpha=0.94, facecolor="white", edgecolor=GRID,
+              fontsize=6.05, handletextpad=0.35, borderpad=0.28,
+              labelspacing=0.22, borderaxespad=0.0)
 
     ax.set_xlabel("MLP channels kept at controller exit, % (log scale)",
                   labelpad=5)
