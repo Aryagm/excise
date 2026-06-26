@@ -226,7 +226,7 @@ def fig_frontier():
               fontsize=6.05, handletextpad=0.35, borderpad=0.28,
               labelspacing=0.22, borderaxespad=0.0)
 
-    ax.set_xlabel("MLP channels kept at controller exit, % (log scale)",
+    ax.set_xlabel("MLP channels kept (%) (log scale)",
                   labelpad=5)
     ax.set_ylabel("fidelity / reported recovery (%)", labelpad=5)
     ax.axhline(100, color=LGRAY, lw=0.7, ls=":", zorder=1)
