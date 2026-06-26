@@ -27,17 +27,34 @@ plt.rcParams.update({
     "ytick.labelsize": 8,
     "axes.spines.top": False,
     "axes.spines.right": False,
-    "axes.linewidth": 0.7,
+    "axes.edgecolor": "#1f2328",
+    "axes.labelcolor": "#1f2328",
+    "axes.linewidth": 0.75,
+    "xtick.color": "#1f2328",
+    "ytick.color": "#1f2328",
     "xtick.major.width": 0.7,
     "ytick.major.width": 0.7,
     "axes.grid": True,
-    "grid.alpha": 0.22,
+    "grid.alpha": 1.0,
+    "grid.color": "#e7e9ee",
     "grid.linewidth": 0.5,
     "figure.dpi": 200,
     "savefig.bbox": "tight",
 })
-RED, GRAY, GOLD, LGRAY = "#a63232", "#6e6e6e", "#b8932f", "#c9c9c9"
-INK = "#222222"
+INK = "#1f2328"
+MUTED = "#667085"
+GRID = "#e7e9ee"
+PANEL = "#f8fafc"
+EXCISE = "#c43c39"
+EXCISE_DARK = "#9f2f2d"
+EXCISE_LIGHT = "#fff3f1"
+EXCISE_PALE = "#d98882"
+PRISM = "#416f8f"
+FLOOR = "#b68a2a"
+CONTROL = "#8a8f98"
+
+# Backwards-compatible aliases used throughout the figure code.
+RED, GRAY, GOLD, LGRAY = EXCISE, MUTED, FLOOR, GRID
 
 
 def load(name):
@@ -52,55 +69,70 @@ def save(fig, name):
 
 # ------------------------------------------------------------- method
 def fig_method():
-    fig, ax = plt.subplots(figsize=(6.8, 2.1))
+    fig, ax = plt.subplots(figsize=(6.8, 2.35))
     ax.set_xlim(0, 100)
-    ax.set_ylim(0, 30)
+    ax.set_ylim(0, 34)
     ax.axis("off")
     ax.grid(False)
 
-    def box(x, y, w, h, title, lines, accent=False, dashed=False):
-        fc = "#fdf5f4" if accent else "#f7f7f7"
-        ec = RED if accent else GRAY
+    def box(x, y, w, h, eyebrow, title, lines, accent=False):
+        fc = EXCISE_LIGHT if accent else PANEL
+        ec = EXCISE_DARK if accent else CONTROL
         ax.add_patch(FancyBboxPatch(
             (x, y), w, h, boxstyle="round,pad=0.45,rounding_size=1.1",
-            facecolor=fc, edgecolor=ec, linewidth=1.0,
-            linestyle="--" if dashed else "-"))
-        ax.text(x + w / 2, y + h - 3.4, title, ha="center", va="center",
-                fontsize=8.2, weight="bold",
-                color=RED if accent else INK)
+            facecolor=fc, edgecolor=ec, linewidth=1.15))
+        ax.text(x + 1.1, y + h - 2.2, eyebrow, ha="left", va="center",
+                fontsize=5.7, color=EXCISE_DARK if accent else MUTED,
+                weight="bold")
+        ax.text(x + w / 2, y + h - 5.0, title, ha="center", va="center",
+                fontsize=8.1, weight="bold",
+                color=EXCISE_DARK if accent else INK)
         for i, ln in enumerate(lines):
-            line_y = (y + h - 6.4 - 3.0 * i
-                      if len(lines) > 3 else y + h - 7.6 - 4.2 * i)
-            ax.text(x + w / 2, line_y, ln, ha="center",
-                    va="center", fontsize=7.0, color=INK)
+            if len(lines) == 1:
+                line_y = y + 1.9
+            elif len(lines) > 3:
+                line_y = y + h - 7.3 - 2.75 * i
+            else:
+                line_y = y + h - 8.2 - 3.55 * i
+            body_size = 6.3 if len(lines) == 1 else 6.8
+            ax.text(x + w / 2, line_y, ln, ha="center", va="center",
+                    fontsize=body_size, color=INK)
 
     def arrow(x1, y1, x2, y2, label=None, dy=2.0):
         ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2),
-                                     arrowstyle="-|>", mutation_scale=9,
-                                     linewidth=0.9, color=GRAY,
+                                     arrowstyle="-|>", mutation_scale=9.5,
+                                     linewidth=1.0, color=MUTED,
                                      shrinkA=2, shrinkB=2))
         if label:
             ax.text((x1 + x2) / 2, max(y1, y2) + dy, label, ha="center",
-                    fontsize=6.6, color=GRAY, style="italic")
+                    fontsize=6.3, color=MUTED, style="italic")
 
-    box(1, 9, 17, 17, "frozen base $M$",
-        ["greedy outputs $\\hat{y}$", "top-$k$ dists,", "cached once"])
-    box(29, 9, 21, 17, "joint student", ["LoRA $\\theta$ (rank 32)",
-        "hard-concrete gates $z$", "binned KL + anchored", "guardrail"],
+    ax.add_patch(FancyBboxPatch(
+        (23.4, 5.8), 57.2, 22.6,
+        boxstyle="round,pad=0.25,rounding_size=1.4",
+        facecolor="#fff8f6", edgecolor="#f0c7c1", linewidth=0.7,
+        linestyle=":"))
+    ax.text(52.0, 4.0, "one training run: selection and relocation happen together",
+            ha="center", va="center", fontsize=6.7, color=EXCISE_DARK,
+            style="italic")
+
+    box(1.5, 10.0, 18.0, 17.2, "PROMPTS ONLY", "teacher cache",
+        ["frozen base $M$", "greedy outputs $\\hat{y}$",
+         "top-$k$ + residual mass"])
+    box(26.0, 10.0, 23.0, 17.2, "TRAINED", "joint student",
+        ["LoRA adapter $\\theta$", "hard-concrete gates $z$",
+         "masked KL objective", "unmasked guardrail"],
         accent=True)
-    box(60, 9, 22, 17, "adaptive controller",
-        ["target $\\downarrow$ while KL ok",
-         "probes vs unmasked baseline",
-         "2 strikes $\\Rightarrow$ floor + rollback"])
-    box(88, 16.5, 11.5, 9.5, "frontier", ["+ receipts"])
-    box(88, 3.5, 11.5, 9.5, "sliced", ["$\\equiv$ masked"])
+    box(57.0, 10.0, 21.5, 17.2, "STOPPING RULE", "controller",
+        ["lower target while KL ok", "dev probes vs unmasked",
+         "rollback after 2 strikes"])
+    box(86.0, 18.8, 12.5, 9.2, "OUTPUT", "frontier", ["+ receipts"])
+    box(86.0, 5.4, 12.5, 9.2, "OUTPUT", "sliced", ["$\\equiv$ mask"])
 
-    arrow(19, 17.5, 28, 17.5, "prompts only", 11.0)
-    arrow(51, 17.5, 59, 17.5)
-    arrow(83, 19.5, 87, 21)
-    arrow(83, 15.5, 87, 8.5)
-    ax.text(39.5, 4.0, "one training run", ha="center", fontsize=7.2,
-            color=RED, style="italic")
+    arrow(20.5, 18.6, 25.2, 18.6, "targets", 4.2)
+    arrow(49.8, 18.6, 56.1, 18.6, "probe", 2.4)
+    arrow(79.4, 20.6, 85.0, 23.2)
+    arrow(79.4, 16.3, 85.0, 10.8)
     save(fig, "method")
 
 
@@ -112,11 +144,11 @@ def fig_frontier():
              (5.05, 91.33, "staged collimation", (10, -3)),
              (4.65, 90.6, "refined MVC", (-14, -16))]
     ax.scatter([p[0] for p in prism], [p[1] for p in prism], s=46, marker="s",
-               facecolor="white", edgecolor=GRAY, linewidth=1.2,
+               facecolor="white", edgecolor=PRISM, linewidth=1.2,
                label="PRISM (staged pipeline)", zorder=3)
     for x, y, t, off in prism:
         ax.annotate(t, (x, y), textcoords="offset points", xytext=off,
-                    fontsize=7, color=GRAY)
+                    fontsize=7, color=PRISM)
     v02 = []
     for s in (42, 43, 44):
         d = json.loads((ROOT / "library_runs" / "v02" /
@@ -172,7 +204,7 @@ def fig_fc():
     for b, (_, v) in zip(bars, budgets):
         a2.annotate(f"{v:.0f}", (b.get_x() + b.get_width() / 2, v + 2),
                     ha="center", fontsize=7, color=INK)
-    a2.axhline(r["unmasked_self_match"] * 100, color=GRAY, lw=1.0, ls="--",
+    a2.axhline(r["unmasked_self_match"] * 100, color=CONTROL, lw=1.0, ls="--",
                label=f"unmasked ceiling "
                      f"({r['unmasked_self_match']*100:.0f}%)", zorder=4)
     a2.set_xlabel("MLP channels kept (%)")
@@ -200,7 +232,7 @@ def fig_miscalibration():
     emas = [k for k, _ in kls]
     ax.plot(opens, emas, "-", color=GOLD, lw=1.4,
             label="EMA distillation KL (left)")
-    ax.axhline(0.02, color=GRAY, lw=0.8, ls="--", label="KL budget (left)")
+    ax.axhline(0.02, color=CONTROL, lw=0.8, ls="--", label="KL budget (left)")
     ax.invert_xaxis()
     ax.set_xlabel("MLP channels open (%)")
     ax.set_ylabel("EMA KL")
@@ -240,7 +272,7 @@ def fig_ablations():
         labels.append(label)
         recs.append(r["evals"]["0.0500"]["recovery"] * 100)
         floors.append(r["floor_frac"] * 100)
-    bars = ax.bar(labels, recs, color=[RED] * 3 + ["#c47a7a"] * 2, width=0.62,
+    bars = ax.bar(labels, recs, color=[RED] * 3 + [EXCISE_PALE] * 2, width=0.62,
                   zorder=3)
     for b, f, rec in zip(bars, floors, recs):
         ax.annotate(f"{rec:.1f}", (b.get_x() + b.get_width() / 2, rec + 1.5),
@@ -248,9 +280,9 @@ def fig_ablations():
         ax.annotate(f"floor {f:.1f}%",
                     (b.get_x() + b.get_width() / 2, 8), ha="center",
                     fontsize=6.8, color="white", weight="bold")
-    ax.axhline(91.33, color=GRAY, lw=1.0, ls="--")
+    ax.axhline(91.33, color=PRISM, lw=1.0, ls="--")
     ax.annotate("PRISM staged pipeline (91.3%)", xy=(4.42, 91.3),
-                xytext=(4.42, 110), fontsize=7.2, color=GRAY, ha="right",
+                xytext=(4.42, 110), fontsize=7.2, color=PRISM, ha="right",
                 va="top")
     ax.axhline(100, color=LGRAY, lw=0.7, ls=":")
     ax.set_ylabel("recovery @ 5% channels (%)")
@@ -270,7 +302,7 @@ def fig_v02():
           if g["src"] == "train"]
     an = [(g["step"], g["kl"]) for g in r["guardrail_trace"]
           if g["src"] == "anchor"]
-    a1.plot(*zip(*tr), "-", color=GRAY, lw=1.0,
+    a1.plot(*zip(*tr), "-", color=CONTROL, lw=1.0,
             label="train batches")
     a1.plot(*zip(*an), "-", color=RED, lw=1.2,
             label="off-task anchors")
@@ -285,7 +317,7 @@ def fig_v02():
     opens = [p["open"] * 100 for p in r["probe_trace"]]
     masked = [p["self_match"] * 100 for p in r["probe_trace"]]
     unm = [p["unmasked"] * 100 for p in r["probe_trace"]]
-    a2.plot(opens, unm, "--", color=GRAY, lw=1.1, marker="o", ms=3.5,
+    a2.plot(opens, unm, "--", color=CONTROL, lw=1.1, marker="o", ms=3.5,
             label="unmasked, same step (baseline)")
     a2.plot(opens, masked, "-", color=RED, lw=1.3, marker="o", ms=3.5,
             label="masked probe")
@@ -329,7 +361,7 @@ def fig_diversity():
     for ax, (title, i, scale) in zip(axes, panels):
         labels = list(vals)
         ys = [vals[l][i] for l in labels]
-        bars = ax.bar(labels, ys, color=[GRAY, RED], width=0.55, zorder=3)
+        bars = ax.bar(labels, ys, color=[CONTROL, RED], width=0.55, zorder=3)
         for b, v in zip(bars, ys):
             ax.annotate(f"{v:.1f}", (b.get_x() + b.get_width() / 2,
                                      v * (1.06 if scale else 1) + (0 if scale else 1)),
@@ -365,7 +397,7 @@ def fig_params():
     rows = [("base 1.54B", [mlp0, emb0, rest]),
             (f"after excise {after_total/1000:.2f}B",
              [mlp1, emb1, rest1])]
-    colors = [RED, GOLD, GRAY]
+    colors = [RED, GOLD, CONTROL]
     names = ["MLP channels", "vocabulary (embed + head)",
              "attention + norms"]
     for yi, (label, parts) in enumerate(rows[::-1]):
@@ -380,7 +412,7 @@ def fig_params():
                 "the vocabulary; attention (untouched) is 94% of what remains",
                 xy=(after_total + 8, 0), xytext=(360, -0.05), fontsize=7.4,
                 color=INK, va="center",
-                arrowprops=dict(arrowstyle="-", color=GRAY, lw=0.7,
+                arrowprops=dict(arrowstyle="-", color=CONTROL, lw=0.7,
                                 shrinkB=4))
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colors]
     ax.legend(handles, names, frameon=False, fontsize=7.2, loc="lower right",
