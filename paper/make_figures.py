@@ -158,14 +158,7 @@ def fig_frontier():
     v02_min = min(p[1] for p in v02_runs)
     v02_max = max(p[1] for p in v02_runs)
     deep_pt = (deep["floor"] * 100, deep["frontier"][-1][1] * 100)
-    old_pt = (7.6, 89.0)
     prism = [(5.75, 29.0), (90.61, 99.53), (5.05, 91.33), (4.65, 90.6)]
-
-    def display_offset(point, dx_pt=0, dy_pt=0):
-        x_disp, y_disp = ax.transData.transform(point)
-        scale = fig.dpi / 72.0
-        return ax.transData.inverted().transform(
-            (x_disp + dx_pt * scale, y_disp + dy_pt * scale))
 
     def log_path(p0, p1, t):
         log_x = (1 - t) * math.log10(p0[0]) + t * math.log10(p1[0])
@@ -179,17 +172,11 @@ def fig_frontier():
     ax.set_yticks([0, 20, 40, 60, 80, 100])
     ax.axvspan(0.65, 1.3, color=EXCISE_LIGHT, zorder=0)
     ax.add_patch(FancyArrowPatch(
-        old_pt, (v02_x, v02_y), arrowstyle="-|>", mutation_scale=12,
-        lw=1.55, color=RED, shrinkA=9, shrinkB=12,
-        connectionstyle="arc3,rad=-0.12", zorder=2))
-    ax.add_patch(FancyArrowPatch(
         log_path((v02_x, v02_y), deep_pt, 0.30),
         log_path((v02_x, v02_y), deep_pt, 0.72),
         arrowstyle="-|>", mutation_scale=9,
         lw=1.0, color=EXCISE_DARK, shrinkA=0, shrinkB=0,
         connectionstyle="arc3,rad=0.08", zorder=2))
-    ax.scatter([old_pt[0]], [old_pt[1]], s=76, color=CONTROL,
-               edgecolor="white", linewidth=1.0, zorder=5)
     ax.scatter([v02_x], [v02_y], s=86, marker="D", color=RED,
                edgecolor="white", linewidth=1.0, zorder=6)
     ax.scatter([deep_pt[0]], [deep_pt[1]], s=76, marker="D",
@@ -209,11 +196,9 @@ def fig_frontier():
             path_effects=label_halo, arrowprops=arrowprops)
 
     mark_label((v02_x, v02_y), f"v0.2 aggregate\n1.2%, {v02_y:.1f}%",
-               RED, 5, 13, ha="left", va="bottom", fontsize=6.15)
+               RED, 4, 6, ha="left", va="bottom", fontsize=6.15)
     mark_label(deep_pt, "extended\n0.71%, 91.1%", EXCISE_DARK, 0, -13,
                ha="center", va="top", fontsize=6.15)
-    mark_label(old_pt, "v0.1\n7.6%, 89.0%", CONTROL, 8, -4,
-               ha="left", va="center", fontsize=6.15)
 
     mark_label((5.75, 29.0), "raw mask\n5.75%, 29.0%",
                PRISM, 8, 0, ha="left", va="center", fontsize=5.75)
@@ -226,13 +211,6 @@ def fig_frontier():
                PRISM, 13, -14, ha="left", va="top", fontsize=5.6,
                leader=True)
 
-    ax.annotate("v0.1 $\\rightarrow$ v0.2\n6.3x lower floor\n+2.5 pts",
-                xy=log_path(old_pt, (v02_x, v02_y), 0.48),
-                xytext=(-34, -18), textcoords="offset points",
-                ha="center", va="top", fontsize=6.65, color=INK, zorder=8,
-                path_effects=label_halo,
-                arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.5,
-                                shrinkA=1.5, shrinkB=3))
     ax.set_xlabel("MLP channels kept at controller exit, % (log scale)",
                   labelpad=5)
     ax.set_ylabel("fidelity / reported recovery (%)", labelpad=5)
