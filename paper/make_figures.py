@@ -10,6 +10,8 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
+from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 try:
     from adjustText import adjust_text
@@ -150,6 +152,7 @@ def fig_frontier():
     gs = fig.add_gridspec(2, 1, height_ratios=[1.65, 0.78], hspace=0.38)
     ax = fig.add_subplot(gs[0])
     tab = fig.add_subplot(gs[1])
+    label_halo = [path_effects.withStroke(linewidth=2.3, foreground="white")]
 
     v02_runs = []
     for s in (42, 43, 44):
@@ -165,6 +168,12 @@ def fig_frontier():
     deep_pt = (deep["floor"] * 100, deep["frontier"][-1][1] * 100)
     old_pt = (7.6, 89.0)
     prism = [(5.75, 29.0), (90.61, 99.53), (5.05, 91.33), (4.65, 90.6)]
+    prism_refs = [
+        ("raw mask", 5.75, 29.0),
+        ("refined MVC", 4.65, 90.6),
+        ("staged collimation", 5.05, 91.33),
+        ("raw, broad", 90.61, 99.53),
+    ]
 
     def display_offset(point, dx_pt=0, dy_pt=0):
         x_disp, y_disp = ax.transData.transform(point)
@@ -207,20 +216,14 @@ def fig_frontier():
         ((v02_x, v02_y), f"v0.2 aggregate\n1.2%, {v02_y:.1f}%",
          RED, 16, 44, "left"),
         (deep_pt, "extended\n0.71%, 91.1%", EXCISE_DARK, 8, -10, "left"),
-        ((5.75, 29.0), "raw mask\n5.75%, 29.0%", PRISM, 12, -12, "left"),
-        ((90.61, 99.53), "raw, broad\n90.61%, 99.5%", PRISM, -14, -14,
-         "right"),
-        ((5.05, 91.33), "staged collimation\n5.05%, 91.3%", PRISM,
-         12, 20, "left"),
-        ((4.65, 90.6), "refined MVC\n4.65%, 90.6%", PRISM, -18, -22,
-         "right"),
     ]
     texts, target_x, target_y = [], [], []
     for point, label, color, dx, dy, ha in labels:
         x, y = display_offset(point, dx, dy)
         texts.append(ax.text(x, y, label, ha=ha, va="center",
                              fontsize=6.5 if color != INK else 7.1,
-                             color=color, zorder=8))
+                             color=color, zorder=8,
+                             path_effects=label_halo))
         target_x.append(point[0])
         target_y.append(point[1])
     adjust_text(
@@ -229,15 +232,25 @@ def fig_frontier():
         y=[old_pt[1], v02_y, deep_pt[1], *[p[1] for p in prism]],
         expand=(1.08, 1.16), force_text=(0.08, 0.16),
         force_static=(0.08, 0.12), force_pull=(0.01, 0.02),
-        max_move=(7, 7), iter_lim=250, min_arrow_len=7,
-        arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.45,
-                        shrinkA=2, shrinkB=3))
-    ax.annotate("6.3x lower floor\nwith higher recovery",
-                xy=log_path(old_pt, (v02_x, v02_y), 0.58),
-                xytext=(0, -46), textcoords="offset points",
-                ha="center", va="top", fontsize=7.1, color=INK,
-                arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.55,
-                                shrinkA=2, shrinkB=3))
+        max_move=(7, 7), iter_lim=250)
+    note_x, note_y = display_offset(log_path(old_pt, (v02_x, v02_y), 0.58),
+                                    0, -46)
+    ax.text(note_x, note_y, "6.3x lower floor\nwith higher recovery",
+            ha="center", va="top", fontsize=7.1, color=INK, zorder=8,
+            path_effects=label_halo)
+    prism_handles = [
+        Line2D([], [], linestyle="None", marker="s", markersize=5.4,
+               markerfacecolor="white", markeredgecolor=PRISM,
+               markeredgewidth=1.1, label=f"{name}: {x:.2f}%, {y:.1f}%")
+        for name, x, y in prism_refs
+    ]
+    ax.legend(handles=prism_handles, title="PRISM refs",
+              loc="lower right", bbox_to_anchor=(0.995, 0.05),
+              frameon=True, fancybox=False, framealpha=0.94,
+              facecolor="white", edgecolor=GRID,
+              fontsize=5.8, title_fontsize=6.3,
+              handletextpad=0.35, borderaxespad=0.15,
+              labelspacing=0.25)
     ax.set_xlabel("MLP channels kept at controller exit, % (log scale)",
                   labelpad=5)
     ax.set_ylabel("fidelity / reported recovery (%)", labelpad=5)
