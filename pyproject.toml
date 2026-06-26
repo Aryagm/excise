@@ -28,7 +28,6 @@ dependencies = [
 [project.optional-dependencies]
 paper = [
     "matplotlib>=3.8",
-    "adjustText>=1.4",
 ]
 
 [project.urls]
