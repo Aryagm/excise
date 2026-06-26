@@ -1,0 +1,685 @@
+\documentclass{article}
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{newtxmath}
+\usepackage{microtype}
+\usepackage[font=small,labelfont=bf,skip=6pt]{caption}
+\captionsetup[table]{position=above,skip=6pt}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\definecolor{linkblue}{RGB}{38,68,124}
+\usepackage[colorlinks=true,allcolors=linkblue,
+  pdftitle={Excise: One-Shot Capability Extraction from Open Language Models},
+  pdfauthor={}]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\setlength{\bibsep}{3pt}
+\usepackage{listings}
+\definecolor{codegray}{RGB}{110,110,110}
+\definecolor{codered}{RGB}{166,50,50}
+\lstdefinestyle{py}{language=Python,basicstyle=\small\ttfamily,
+  commentstyle=\color{codegray}\itshape,keywordstyle=\color{codered},
+  stringstyle=\color{codegray},showstringspaces=false,frame=single,
+  framerule=0.4pt,rulecolor=\color{codegray},xleftmargin=6pt,
+  framexleftmargin=6pt,aboveskip=8pt,belowskip=4pt}
+
+\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+
+% preprint label (running header + line under the title)
+\renewcommand{\headeright}{Preprint}
+\renewcommand{\undertitle}{Preprint}
+\renewcommand{\shorttitle}{Excise: One-Shot Capability Extraction}
+
+% uniform inter-paragraph spacing; let pages end naturally instead of
+% stretching the glue to justify the bottom margin (arxiv.sty's default)
+\raggedbottom
+
+% generous float placement so figures stay near their text
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.6}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.75}
+
+\title{Excise: One-Shot Capability Extraction \\ from Open Language Models}
+\author{}
+\date{June 2026}
+
+\makeatletter
+\renewcommand{\@maketitle}{%
+  \vbox{%
+    \hsize\textwidth
+    \linewidth\hsize
+    \vskip 0.1in
+    \@toptitlebar
+    \centering
+    {\LARGE\sc \@title\par}
+    \@bottomtitlebar
+    \textsc{\undertitle}\par
+    \vskip 0.18in
+    {\@date\par}
+    \vskip 0.24in
+  }
+}
+\makeatother
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A deployed language model usually runs one capability while paying for all of
+them. We show that a single capability can be carved out of a frozen model and
+run on a small fraction of the network, as little as 1--2\% of MLP channels
+for a well-covered task, in one short, label-free training run on a single
+consumer GPU. Learnable gates on every MLP channel train jointly with a
+low-rank adapter, held to the frozen base model by a forward-KL constraint,
+while a controller lowers the sparsity target as fast as behavior allows; the
+decision of when to stop is made by generation probes, not loss curves. The
+run needs no labels (the target is the model's own output), reports a
+controller-found stopping point rather than requiring a fixed budget, and
+exports a physically smaller model: deleting the masked channels and pruning
+the vocabulary to the capability's token support shrinks
+Qwen2.5-Math-1.5B from 1.54B to 0.17B parameters ($9\times$) with no loss
+against masking. When a run exits at a configured lower bound or step cap, the
+reported floor is an upper bound on the behavioral-collapse minimum, not a
+claim that collapse has been reached. On 2-digit addition the run drives every
+seed to 1.2\% of channels (0.7\% given more steps) at over 91\% verbatim
+reproduction, and recovers 100.9\% of base accuracy at 5\%. The same
+procedure, unchanged, also extracts function calling from Qwen3-4B (76\%
+verbatim reproduction at 40\% of channels), which we report as breadth rather
+than a head-to-head PRISM comparison. It exposes data as its dominant knob:
+regenerating a JSON-extraction substrate from $5\times$ more diverse prompts
+drops its floor from 27.5\% to 1.9\% of channels at 97\% fidelity. The single
+run replaces PRISM's staged pipeline (adapt, attribute, select, re-train),
+whose extraction contract and recovery metric we adopt; on PRISM's own
+arithmetic benchmark it passes the hand-tuned staged best on both axes (2.9\%
+vs.\ 5.05\% of channels, 97\% vs.\ 91\% recovery). Three negative results
+shaped the design, and we argue they generalize: distribution-level KL reads
+healthy while real recovery collapses, layer-granular gates let the adapter
+overfit silently, and a renormalized sparse KL quietly trains the unmasked
+model away from the base it is meant to anchor.
+\end{abstract}
+
+\keywords{capability extraction \and structured pruning \and self-distillation
+  \and model compression}
+
+\begin{figure}[b!]
+\centering
+\includegraphics[width=0.76\textwidth]{figures/frontier.pdf}
+\caption{\textbf{Two-digit addition runs on 0.7--1.2\% of MLP channels, found
+automatically in one label-free run.} Qwen2.5-Math-1.5B. The red aggregate
+marker summarizes three configured lower-bound exits at 1.2\% of channels
+(91.0--92.0\% held-out verbatim self-match); the dark red marker is the
+extended step-cap exit at 0.71\%. The x-axis is log-scaled. The blue PRISM
+points are reported PRISM references \citep{prism2026}; direct labels give
+each channel budget and reported score. They use PRISM's task-accuracy metric
+and are shown for context. Caveats in \S\ref{sec:honest}.}
+\label{fig:frontier}
+\end{figure}
+
+\section{Introduction}
+
+Efficiency methods such as pruning, distillation, and quantization ask how
+much of a network can be removed while \emph{aggregate} performance survives.
+A sharper question is this: given one named behavior, how small a part of the
+network can carry it once everything else is switched off? We answer it with a
+single training run that selects and relocates the behavior at the same time,
+needs no labels, reports a controller-found sparsity floor, and hands back a
+physically smaller model, all on one consumer GPU. The question itself, the
+\emph{extraction contract} (a channel subset counts only if behavior survives
+with its complement deactivated), and \emph{recovery} as the metric are due to
+PRISM \citep{prism2026}, which we adopt and credit; its central finding is
+that a behavior-preserving adaptation step (``collimation'') can relocate a
+capability into far fewer channels than attribution alone suggests.
+
+PRISM located that substrate with a staged pipeline: collimate, attribute,
+select a top-$k$ mask, optionally re-collimate under the frozen mask. The
+stages cap what is reachable. An adapter trained \emph{after} mask selection
+cannot shrink the mask; one trained \emph{before} moves the frontier only
+indirectly; and the budget $k$ is swept by hand, one costly round of
+evaluations per point. Folding selection and relocation into a single
+objective removes both the ceiling and the manual sweep. PRISM itself names a
+training-time $L_0$ or gating objective as its highest-value open direction.
+
+This paper presents that technique and ships it as a tool.
+Figure~\ref{fig:frontier} shows how small the substrate gets. Our
+contributions:
+
+\begin{enumerate}
+\item \textbf{One-shot joint extraction.} Hard-concrete gates
+\citep{louizos2018} on every MLP channel train jointly with a LoRA adapter
+\citep{hu2022lora}, under a mass-covering KL constraint to the frozen base.
+Selection and relocation happen at once, and the split between
+``collimate-then-attribute'' and ``attribute-then-collimate'' disappears
+(\S\ref{sec:method}).
+\item \textbf{Floor discovery by behavior probe.} A Lagrangian controller
+lowers the sparsity target whenever the KL budget is met; cheap
+greedy-generation probes veto the descent when the model's actual outputs
+start to degrade. The full sparsity--fidelity frontier and its reported floor
+come from one run (\S\ref{sec:controller}).
+\item \textbf{No labels.} The distillation target is the base model's own
+greedy output and full distribution; no labeled data is required
+(\S\ref{sec:results}).
+\item \textbf{Physical export.} For gated MLPs, deleting a masked channel is
+exactly equivalent to zero-masking it, and pruning the vocabulary to the
+capability's token support compounds the saving. We verify both inside every
+run and ship them: 1.54B $\to$ 0.17B parameters ($9\times$) at undamaged
+fidelity (\S\ref{sec:slice}).
+\item \textbf{Calibrated negative results.} Distribution-level KL is an
+unreliable stopping signal at high sparsity; a renormalized sparse-KL cache
+silently trains the unmasked model away from the base it should anchor; and
+layer-granular gates allow silent overfitting to the training distribution
+(\S\ref{sec:failures}). These reach beyond our method: any faithfulness
+metric built on truncated logit divergence inherits the same blind spots.
+\end{enumerate}
+
+\section{Method}\label{sec:method}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/method.pdf}
+\caption{\textbf{One-shot extraction.} The frozen base model supplies
+label-free targets (greedy outputs and cached top-$k$ distributions). Gates
+and adapter train jointly under a KL constraint, and a controller paced by
+generation probes finds the floor or records the configured exit. The run
+emits the sparsity--fidelity frontier, integrity receipts, and a physically
+sliced model.}
+\label{fig:method}
+\end{figure}
+
+\paragraph{Setup.} Let $M$ be a frozen decoder-only transformer and
+$\mathcal{C}$ its MLP intermediate channels ($L \times d_\mathrm{ff}$, the
+inputs to each block's down-projection), following PRISM's unit of
+extraction. Each channel $c$ gets a hard-concrete gate $z_c \in [0,1]$
+parameterized by $\log\alpha_c$ \citep{louizos2018, maddison2017concrete};
+a LoRA adapter $\theta$ (rank 32, all linear modules) supplies the capacity
+to relocate. Gates initialize from a $|\mathrm{grad}\times\mathrm{act}|$
+attribution percentile rather than a constant. Attribution alone selects poor
+masks (Table~\ref{tab:arith}), but it is a useful prior on the initial
+channel ordering. The teacher is the base model itself. Given prompts $x$
+that exercise the target capability, we take its greedy continuations
+$\hat{y} = M(x)$ and its full distribution $p_M(\cdot \mid x, \hat y_{<t})$
+at each output position, cached once as top-128 sparse vectors \emph{plus the
+residual off-support mass}. Keeping the residual is not bookkeeping.
+Renormalizing the support (the obvious implementation) makes the KL read
+$-\log(\text{coverage})$ even when student and teacher agree exactly, and
+puts positive gradient on every off-support token (\S\ref{sec:failures}).
+
+\paragraph{Objective.} Each step samples gates $z$ (outside any
+gradient-checkpointed region; see \S\ref{sec:failures}) and minimizes
+\begin{equation}
+\mathcal{L} =
+\underbrace{\mathrm{KL}\!\left(p_M \,\|\, p_{\theta,z}\right)}_{\text{masked student tracks base}}
+\;+\; \beta_\mathrm{ce}\,\mathrm{CE}(\hat y)
+\;+\; \lambda \,\mathbb{E}\!\left[\|z\|_0\right]/|\mathcal{C}|
+\;+\; \beta_g\,
+\underbrace{\mathrm{KL}\!\left(p_M \,\|\, p_{\theta}\right)}_{\text{guardrail (every 4th step)}},
+\end{equation}
+with $\beta_\mathrm{ce}{=}0.05$, $\beta_g{=}1$. Both KL terms are binned over
+the cached top-$k$ support plus one residual bucket, which is zero exactly
+when the student matches the teacher. The forward (mass-covering) KL
+direction follows PRISM's collimation analysis: the student may not drop
+probability anywhere the base places it. The guardrail evaluates the
+\emph{unmasked} adapted model and anchors it to the base. This stops the
+adapter from ``solving the task masked'' by quietly becoming a different
+model; without it, unmasked accuracy drifted 3.7 points in our early runs.
+A train batch can only anchor points the adapter is already fitting, so the
+guardrail also alternates onto a rotating batch of off-task \emph{anchor
+text} when provided, tunes its own cadence from the measured anchor KL, and
+stays active through the polish phase. Each of these closes a drift route we
+hit in practice (\S\ref{sec:results}, \S\ref{sec:failures}).
+
+\paragraph{Adaptive controller.}\label{sec:controller}
+A target open fraction $\tau$ starts at 1 and decays multiplicatively
+($\times 0.993$ per step) whenever the EMA of the distillation KL sits under
+a budget ($0.02$--$0.025$ in all experiments); the Lagrange multiplier
+follows $\lambda \leftarrow \max(0, \lambda + \eta\,(\bar z - \tau))$. Once
+the open fraction drops below a threshold, every 150 steps a \emph{probe}
+hardens the current top-$k$ mask and checks whether a greedy rollout would
+still reproduce the teacher outputs. We compute this as teacher-forced argmax
+agreement (exactly equivalent by induction on the shared prefix, and
+${\sim}100\times$ cheaper than generating) on a dev split held out of the
+gradient batches, so the floor is decided on prompts the model has not
+memorized. The masked reading is compared against the unmasked model measured
+\emph{at the same step}, never against an assumed 100\%: batched bf16 decoding
+alone costs several points of verbatim self-match, and we must not blame
+masking for adapter drift. If the gap exceeds tolerance twice in a row, the
+floor is declared and the gates roll back to the last passing snapshot. If no
+probe failure occurs before a configured lower bound or step cap, we report
+that stopping point as a floor upper bound and record the exit reason in the
+receipts.
+
+Once the descent stops, the mask is frozen at the floor budget and the
+adapter alone is polished briefly under the exact binary mask (guardrail
+still active), which removes the stochastic-gate train/eval mismatch. Final
+evaluation then hardens top-$k$ masks at standard budgets. Because the polish
+specializes the adapter to the floor mask (we measured off-floor budgets
+reading \emph{below} the floor without correction), each off-floor budget is
+briefly re-polished from the floor-polished snapshot before evaluation. From
+a single run this yields a frontier of deployable artifacts, not one point
+dressed up as many.
+
+\paragraph{Receipts.} Every run reports a random-mask control matched to the
+floor mask's per-layer channel counts (which should read ${\approx}0$),
+unmasked drift, the base model's own decode-noise self-match (the honest
+ceiling for every other number), the probe and guardrail traces, and binomial
+confidence intervals on held-out fidelity. Together they guard three failure
+modes (trivial tasks, cheating adapters, and masks that only correlate with
+behavior), two of which we hit and one we inherited from PRISM's analysis.
+
+\section{Results}\label{sec:results}
+
+Every experiment ran on a single RTX 4090, through the released library's
+public interface. Arithmetic gives the controlled comparison; JSON extraction
+and function calling test whether the same extraction machinery behaves on
+practical prompt-defined capabilities. This is the entire workflow:
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[style=py]
+from excise import extract, load_sliced
+
+result = extract("Qwen/Qwen2.5-Math-1.5B", prompts=prompts)  # no labels
+print(result.report())            # frontier, floor, receipts, CIs
+small = result.export_sliced(prune_vocabulary=True)  # 1.54B -> 0.17B
+result.save("substrate/")         # receipts + the sliced artifact
+model = load_sliced("substrate/sliced")              # round-trips
+\end{lstlisting}
+\end{minipage}
+
+\noindent Code, configs, and per-run receipts are omitted for anonymity.
+
+\subsection{Arithmetic: extracting addition into around 1\% of the network}
+
+We use PRISM's testbed: 2-digit addition on Qwen2.5-Math-1.5B
+\citep{qwen25math} (canonical prompt \texttt{"a + b ="}, exhaustive sums, 10\%
+held out, 250{,}880 MLP channels), zero-isolation deactivation, and recovery
+$=$ masked accuracy / base accuracy (base: 97.4\%). Table~\ref{tab:arith}
+gives the key points, and Figure~\ref{fig:frontier} places the library's
+controller stopping points against the staged pipeline.
+Table~\ref{tab:arith} reports task-accuracy recovery frontier points; the
+lower controller exits in Figure~\ref{fig:frontier} report held-out verbatim
+self-match, a stricter metric.
+
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Arithmetic extraction.} Every seed beats the staged
+pipeline at 5\%, and the lowest $\geq$95\% recovery point is at or below the
+hand-refined minimal circuit with higher recovery. The unmasked guardrail
+held base accuracy exactly (97.4\%) in all runs.}
+\label{tab:arith}
+\begin{tabular}{lcc}
+\toprule
+ & channels kept & recovery \\
+\midrule
+PRISM raw attribution mask & 5.75\% & 29.0\% \\
+PRISM staged collimation & 5.05\% & 91.3\% \\
+PRISM refined minimal circuit (manual) & 4.65\% & 90.6\% \\
+\midrule
+random mask control (ours) & 5\% & 0.0\% \\
+grad$\times$act attribution mask (ours) & 5\% & 0.3\% \\
+\textbf{excise, one run} (seed 42 / 43 / 44) & 5\% & \textbf{100.9 / 100.4 / 99.5\%} \\
+\textbf{excise, lowest $\geq$95\% recovery point} & \textbf{2.9 / 3.8 / 4.1\%} & 97.2 / 95.4 / 97.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two ablations (Figure~\ref{fig:ablations}): restricting the adapter to MLP
+projections (the strictest frozen-scaffold contract) costs ${\sim}3$ points
+at 5\% and runs 25\% faster; removing the hard-token cross-entropy term
+($\beta_\mathrm{ce}{=}0$) still reaches 96.7\% recovery but floors shallower
+(5.3\%). Hard-token CE is not needed for validity, only for the last
+${\sim}2\%$ of budget.
+
+\paragraph{The reported floor is set by compute, not by behavior.} All three seeds
+descend to the controller's configured lower bound of 1.2\% of channels, with
+the masked--unmasked probe gap inside tolerance throughout, at 91.0--92.0\%
+held-out verbatim self-match. Lowering the bound and giving one seed 9{,}000
+steps reaches 0.71\% of channels (${\sim}1{,}800$ of 250{,}880) at 91.1\%,
+exiting on the step cap while still descending at ${\sim}0.1$ points per
+thousand steps (Figure~\ref{fig:frontier}). When the prompts cover the task
+exhaustively, these exits are controller-found stopping points, not measured
+behavioral-collapse minima: the minimal circuit for 2-digit addition is
+somewhere below 0.7\%, $6.5\times$ under the published hand-refined one.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/ablations.pdf}
+\caption{\textbf{The result is seed-stable and survives ablation.} Recovery
+at 5\% of channels across seeds and ablations; channel floors found by the
+controller annotated within bars.}
+\label{fig:ablations}
+\end{figure}
+
+\subsection{Function calling: a real-world capability, label-free}
+
+We extract single-turn function calling from Qwen3-4B \citep{qwen3} using
+BFCL prompts \citep{patil2025bfcl} (400 tasks; 391 yield clean tool calls from
+the base model; 320 train, 80 held out; 350{,}208 channels). No gold calls
+are used: the teacher is the model's own greedy tool call, and fidelity is
+\emph{verbatim} self-match, stricter than BFCL's semantic scoring, since one
+diverging token fails the example. Held-out fidelity reaches 77.5\% at 50\% of
+channels and 76.3\% at 40\% (Figure~\ref{fig:fc}). Two things stand out.
+
+First, the \emph{unmasked} adapted model self-matches only 86\% on held-out
+prompts. Masking is not the main source of loss; adapter drift under a
+320-prompt training set is. Against that ceiling, the masked model keeps
+${\sim}90\%$ at 40--50\% budgets.
+
+Second, probe fidelity on training prompts stays at 92--98\% down to 12\%
+open, far above held-out fidelity. That gap is a generalization effect an
+exhaustively-covered task like arithmetic cannot show: the binding constraint
+is prompt diversity, not the extraction machinery. To test this, a second
+experiment scales the prompts $6\times$ and hardens the task (all six
+single-turn BFCL splits, plus 1--2 distractor tools per prompt, so the
+substrate must also carry tool \emph{selection}). Drift improves to 88.4\%
+despite the harder task, and the binding constraint moves again: dev-split
+probes stop the descent at 60.7\% of channels (75.3\% held) after only five
+epochs. Given enough data, function calling is bound by training steps, not by
+memorization. The two settings solve different tasks (one given tool vs.\
+selection among distractors), so we do not compare them directly. For
+calibration, PRISM's raw mask recovered 19.1\% at 36.2\% of channels on the 8B
+sibling model, and its best staged collimator (with a curated,
+schema-validated gold corpus and a multi-run objective search) reached
+84.6\%; metric and model-size differences make this directional context, not
+a head-to-head (\S\ref{sec:honest}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/function_calling.pdf}
+\caption{\textbf{Function calling extracts label-free; data, not machinery,
+binds generalization.} Qwen3-4B. Left: probe trace during descent; exact
+self-match holds at 92--98\% from 61\% down to 12\% open on training prompts.
+Right: held-out self-match by budget; the dashed line is the unmasked adapted
+model's own self-match (86\%), which upper-bounds every masked number.}
+\label{fig:fc}
+\end{figure}
+
+\subsection{Breadth: other architectures and capabilities}
+
+To check that the method is a tool and not a Qwen-arithmetic demo, we ran the
+\emph{released library} (not the research scripts) on two further settings.
+
+\paragraph{SmolLM2-1.7B (Llama architecture) \citep{smollm2}.} Few-shot
+2-digit addition extracts to a 7.4\% floor at 97.2\% held-out verbatim
+self-match, sliced 1.75B $\to$ 0.59B (3.0$\times$), all receipts clean.
+
+\paragraph{JSON extraction (Qwen2.5-1.5B-Instruct, chat-formatted prompts).}
+From 3{,}000 label-free prompts spanning eight sentence forms and four
+instruction phrasings, structured JSON extraction floors at 1.9\% of channels
+at 97.2\% held-out self-match (still step-capped), with 1.7 points of unmasked
+drift, a flat ${\sim}98\%$ frontier at every budget, and a verified 1.58B
+$\to$ 0.21B export. The capability touches 9{,}448 token ids; broader
+capabilities are broader in vocabulary too.
+
+\paragraph{Data coverage is the dominant knob.} Restricting the same
+capability to 600 prompts from a \emph{single} sentence template inflates the
+floor $14\times$ (to 27.5\%) and drops fidelity to 90\%
+(Figure~\ref{fig:diversity}). Since the held-out prompts share that template,
+even the 90\% partly measures template fit. We first read our settings as
+``capability breadth tracks substrate size''; this ablation corrects that.
+Substrate size measures the capability \emph{as the prompts exercise it}.
+Floors are upper bounds set jointly by data coverage and compression compute,
+not intrinsic capability sizes, and data is the cheapest lever, since
+label-free prompts cost nothing to diversify.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/diversity.pdf}
+\caption{\textbf{Same capability, same model, same config; only the
+prompts change.} JSON extraction from 600 single-template prompts vs.\
+3{,}000 varied ones (eight sentence forms, four instruction phrasings):
+the floor collapses $14\times$, fidelity at the floor rises seven points,
+and unmasked drift nearly disappears. Both runs are label-free, so the
+diverse variant costs nothing but generation.}
+\label{fig:diversity}
+\end{figure}
+
+\subsection{Physical export: slicing is masking, and the vocabulary is
+next}\label{sec:slice}
+
+For gated MLPs, a zero-masked channel contributes nothing to the
+down-projection, and a deleted one contributes nothing by absence. The two are
+mathematically identical, so the masked evaluations above transfer to a
+physically smaller model. We verify it: slicing Qwen2.5-Math-1.5B at the 2.9\%
+floor gives 94.8\% accuracy against 94.7\% masked (one example in 810), at
+1.54B $\to$ 0.42B parameters (3.66$\times$).
+
+After MLP slicing, the vocabulary is the dominant remaining cost. 2-digit
+addition touches only 1{,}746 of 151{,}936 token ids, so slicing the embedding
+rows to that support takes the same model to 0.17B parameters (9.0$\times$) at
+the 0.71\% floor (Figure~\ref{fig:params}); the exported model speaks a
+remapped id space, with the mapping stored in its config. Both equivalences
+are re-verified inside every run and logged in the receipts (masked, sliced,
+and vocabulary-pruned self-match agreed to within one evaluation example
+here), and the library round-trips the heterogeneous-width artifact
+(\texttt{excise.load\_sliced}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/params.pdf}
+\caption{\textbf{Where the parameters go.} Qwen2.5-Math-1.5B before and
+after extraction at the 0.71\% floor: 99.3\% of MLP channels and 98.9\% of
+the vocabulary are deleted outright; attention and norms, which the method
+does not touch, are 94\% of what remains, the obvious next structured
+dimension to attack.}
+\label{fig:params}
+\end{figure}
+
+Slicing buys memory, not speed at this scale, and we say so plainly because
+such claims are routinely overstated. Our original benchmark showed only a
+1.11$\times$ generation speedup, and a careful decode-throughput benchmark
+(batch 1--64, 64-token greedy decode, eager) shows no speedup at all: the
+0.17B and 1.54B models both decode at ${\sim}40$ tokens/s/sequence on an RTX
+4090, because single-stream decoding there is bound by launch overhead, not
+compute. Memory shrinks unconditionally; latency gains would need larger
+models, batched serving, or a compiled runtime.
+
+\section{What fails, and what it implies}\label{sec:failures}
+
+The method of \S\ref{sec:method} is an end state. Most of its load-bearing
+choices exist because an earlier, more obvious implementation failed in a way
+worth recording, and this section is that record. Each failure was caught by
+the receipts the tool itself emits, and each says something beyond this
+method.
+
+\paragraph{Distribution-level KL is miscalibrated at high sparsity.} Our first
+controller paced the descent on the KL budget alone. It reached 2.2\% open
+with EMA KL comfortably under budget, while true recovery collapsed to
+62--66\% (Figure~\ref{fig:miscal}). Teacher-forced divergence on answer tokens
+simply does not capture the way error compounds across an autoregressive
+rollout. The fix, periodically generating and exact-matching, costs seconds
+per probe and is the load-bearing stability feature of the method. The lesson
+extends past extraction: any faithfulness or circuit-quality metric built on
+teacher-forced logit divergence inherits the same blind spot.
+
+\paragraph{Renormalized sparse KL quietly sharpens the model it should
+anchor.} Caching the teacher's top-$k$ probabilities \emph{renormalized} (the
+obvious implementation, and our first) biases every loss built on it. With
+the student exactly equal to the teacher, the ``KL'' reads
+$-\log(\text{coverage})$ instead of zero, and its gradient $s_j - \hat{p}_j$
+is positive on all off-support mass, pushing the student to concentrate onto
+each batch's cached support. On peaked tasks (arithmetic, coverage
+${\approx}1$) the bias vanishes, which is how it survived three validated
+batteries. On diffuse tasks it surfaces in the worst place: the guardrail,
+whose entire job is to hold the unmasked model \emph{at} the base, instead
+trains it to sharpen. The receipts caught it: a JSON run whose unmasked
+self-match read 55.8\% (made worse by a then-guardrail-free polish phase).
+With the residual bucket restored, anchor batches added, and the guardrail
+active through polish, the same task reads 88.3\% against a 96.7\%
+decode-noise ceiling, and its floor \emph{improves}. Figure~\ref{fig:v02}a
+shows why train-batch monitoring missed it: at the same step, the guardrail KL
+reads $3\times10^{-4}$ on train batches (apparently perfect) and
+$5\times10^{-3}$--$0.15$ on off-task anchors. Drift lives exactly where a
+train-only guardrail cannot see it; an anchor that watches only the training
+distribution anchors nothing. The lesson mirrors the one above: a truncated
+divergence is not a divergence, and it fails precisely where its value is
+supposed to be zero.
+
+\paragraph{Probes calibrated on memorized data flatter the floor.} Our first
+release probed on prompts that were also in the gradient batches, against an
+assumed-perfect baseline. But even the unmodified base model reproduces its
+own batched-bf16 greedy targets only ${\sim}92\%$ verbatim, so part of every
+probe reading was decode noise, not masking damage (Figure~\ref{fig:v02}b
+gives the corrected decision rule). Re-running the identical extraction with
+dev-split probes, scored against the unmasked model at the same step, with
+rollback to the last passing sparsity and the binned KL, moves every number
+the tool reports (Table~\ref{tab:v02}); most of this paper's headline results
+were out of reach under the original calibration. The lesson is quantitative:
+with $n{=}64$ verbatim probes, binomial noise alone is ${\pm}4$ points, so a
+3-point tolerance sits inside the noise band. The first two probes of a run
+tripped it and froze the floor at 7.9\%, where a noise-aware tolerance
+descends to 1.2\% with probes passing throughout. Tolerances on generation
+metrics must be set against the metric's measured noise floor, not chosen for
+strictness.
+
+\begin{table}[h]
+\centering\small
+\caption{\textbf{The same extraction under miscalibrated vs.\ calibrated
+receipts} (arithmetic; identical task, seed, hardware, and metric; base
+decode-noise ceiling 99.9\%). Calibration is not cosmetic: it halves measured
+drift and reaches a $6\times$ lower floor.}
+\label{tab:v02}
+\begin{tabular}{lcc}
+\toprule
+ & original & calibrated (3 seeds) \\
+\midrule
+floor found (probe-governed) & 7.6\% & \textbf{1.2 / 1.2 / 1.2\%} \\
+held-out self-match at floor & 89.0\% & \textbf{91.4 / 92.0 / 91.0\%} \\
+unmasked drift from base & 10.7 pts & \textbf{6.2 / 5.8 / 7.0 pts} \\
+exported parameters (from 1.54B) & 0.48B & \textbf{0.17B} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/v02_calibration.pdf}
+\caption{\textbf{Two failure modes, instrumented} (JSON extraction run).
+(a) Guardrail KL on train batches (gray) vs.\ rotating off-task anchor batches
+(red), same adapter and same steps: the train-batch view reads
+$10$--$100\times$ lower than the anchor view. Drift lives exactly where a
+train-only guardrail cannot see it. (b) Floor detection: the masked probe
+(red) is compared against the unmasked model measured at the same step (gray,
+itself depressed by decode noise and residual drift), never against an assumed
+100\%. When the masked probe falls below tolerance twice, the gates roll back
+to the last passing sparsity.}
+\label{fig:v02}
+\end{figure}
+
+\paragraph{Layer-granular gates permit silent overfitting.} Adding per-layer
+gates (hierarchical $L_0$, meant to enable wall-clock-friendly whole-layer
+drops) closed 16 of 28 layers. Training KL stayed low because the adapter
+rerouted around the missing layers \emph{on the training distribution}, and
+held-out recovery collapsed to 66\%. Channel-granular gates with all layers
+present do not show this. Structured sparsity for speed should be grafted on
+after extraction, not learned jointly.
+
+\paragraph{Engineering notes.} Stochastic gate sampling must happen outside
+gradient-checkpointed regions: in-region RNG produces a different
+recomputation graph and breaks the backward pass. Pre-sampling once per step
+costs nothing and composes with checkpointing, which 4B+ models need on
+consumer GPUs. Separately, grad$\times$act attribution must accumulate under
+\texttt{no\_grad}: an in-place \texttt{+=} of a grad-requiring product turns
+the accumulator into an autograd node that retains every iteration's
+activation graph. That is megabytes and invisible on 10-token arithmetic (it
+survived every validated battery), but gigabytes per iteration and an instant
+OOM on 100-token JSON. Bugs that scale with sequence length hide in short
+benchmarks.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.58\textwidth]{figures/miscalibration.pdf}
+\caption{\textbf{Losses lie; generations don't.} An early KL-only
+controller: EMA distillation KL stays under budget throughout the
+descent (left axis) while true held-out recovery collapses (crosses, right
+axis). Generation probes detect this; losses do not.}
+\label{fig:miscal}
+\end{figure}
+
+\section{Honest comparison notes}\label{sec:honest}
+
+\begin{itemize}
+\item \textbf{Baselines.} Our arithmetic baseline reproduces PRISM's
+qualitative finding (attribution masks fail small: 0.3\% recovery at 5\%) but
+uses grad$\times$act attribution and zero-isolation, not their ReLP and
+counterfactual patching. PRISM's reported numbers come from their paper, not
+our re-runs, and zero-isolation is the harsher operator, so our baseline
+understates theirs.
+\item \textbf{Function calling.} The comparison differs in model size (4B vs.\
+8B) and metric (verbatim self-match vs.\ BFCL exact match); we present it as
+context, not a head-to-head.
+\item \textbf{Seeds.} Arithmetic results are 3 seeds. Function calling is a
+single seed, and its floor was set by the step cap, not detected by a probe.
+\item \textbf{Scope.} PRISM's $10^3$ H100-hour budget bought breadth
+(translation, an 8B model, extensive controls) that ours, at under \$10 per
+result, did not. The claim here is that the \emph{per-result} cost collapses,
+not that our evidence is broader.
+\end{itemize}
+
+\section{Related work}
+
+PRISM \citep{prism2026} defines the problem, contract, and metric we use, and
+our method is its stated future direction, built. Learnable $L_0$ masks during
+adaptation descend from \citet{louizos2018} and movement pruning
+\citep{sanh2020movement}; differentiable circuit discovery applies the same
+machinery to interpretability \citep{bhaskar2024edge, conmy2023acdc}. What
+sets us apart from both is the objective: a behavior-preservation contract
+with an unmasked-validity guardrail, rather than aggregate-loss compression or
+circuit faithfulness. Self-distillation into a substructure relates to
+on-policy and generalized knowledge distillation \citep{hinton2015,
+agarwal2024gkd}, here with teacher and student sharing weights and the student
+differing only by a mask. Superposition \citep{elhage2022superposition}
+explains why attribution-only masks fail and adaptation is needed; sparse
+autoencoders \citep{cunningham2023sae} and weight-sparse training
+\citep{gao2025weightsparse} change the basis instead. The lottery-ticket line
+\citep{frankle2019lottery} seeks subnetworks that \emph{retrain} to full
+performance, whereas extraction requires the behavior to survive
+\emph{without} any retraining from initialization.
+
+\section{Limitations}
+
+Capabilities are bounded by prompt coverage: the tool can flag a
+generalization gap (through held-out receipts) but cannot close it without
+more data. Self-match undercounts semantic fidelity. Vocabulary-pruned
+artifacts speak a remapped id space, and the function-calling vocabulary
+support is 101k of 152k ids, so that lever pays little there. Attention is
+untouched and dominates the exported model. We have not yet run the 8B
+headline, multi-seed function calling, or non-Qwen replications beyond SmolLM2
+and small architecture tests; these gate any stronger claims. Easier
+extraction also eases misuse, such as pulling narrow capabilities out of
+safety-tuned models, so receipts and intended-use documentation ship with the
+tool, following PRISM's stance.
+
+\section{Conclusion}
+
+Capability extraction can be a single, cheap, label-free training run. It
+selects and relocates a behavior at once, finds or bounds its floor by
+generating rather than by watching losses, and leaves behind a deployable
+frontier, integrity receipts, and a model $9\times$ smaller, all on one
+consumer GPU. We build on PRISM's contract (behavior must survive with the
+complement switched off) and pass its staged pipeline on the arithmetic
+benchmark, but that comparison is not the point. The durable lessons are that
+a capability is far
+smaller and cheaper to isolate than a staged search suggests, and that
+logit-level divergence is not behavior: any metric built on it will miss the
+collapses a cheap generation probe catches. Extraction is now a one-command
+install, not a pipeline.
+
+\section*{Reproducibility}
+
+All numbers in this paper were produced by the released library or the
+research scripts in the same repository, on one rented RTX 4090. The paper's
+results correspond to commit \texttt{b0eb63aabe3c} / release
+\texttt{v0.2.0}. The paper's figures regenerate from committed result JSONs via
+\texttt{paper/make\_figures.py}.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
