@@ -138,42 +138,87 @@ def fig_method():
 
 # ------------------------------------------------------------ frontier
 def fig_frontier():
-    fig, ax = plt.subplots(figsize=(4.6, 3.1))
-    prism = [(5.75, 29.0, "raw mask", (7, -2)),
-             (90.61, 99.53, "raw, broad", (-58, -10)),
-             (5.05, 91.33, "staged collimation", (10, -3)),
-             (4.65, 90.6, "refined MVC", (-14, -16))]
-    ax.scatter([p[0] for p in prism], [p[1] for p in prism], s=46, marker="s",
-               facecolor="white", edgecolor=PRISM, linewidth=1.2,
-               label="PRISM (staged pipeline)", zorder=3)
-    for x, y, t, off in prism:
-        ax.annotate(t, (x, y), textcoords="offset points", xytext=off,
-                    fontsize=7, color=PRISM)
-    v02 = []
+    fig = plt.figure(figsize=(5.15, 3.3))
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.65, 0.78], hspace=0.38)
+    ax = fig.add_subplot(gs[0])
+    tab = fig.add_subplot(gs[1])
+
+    v02_runs = []
     for s in (42, 43, 44):
         d = json.loads((ROOT / "library_runs" / "v02" /
                         f"arith_v02_long_s{s}" / "summary.json").read_text())
-        v02.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
+        v02_runs.append((d["floor"] * 100, d["frontier"][-1][1] * 100))
     deep = json.loads((ROOT / "library_runs" / "v02" / "arith_v02_deep_s42" /
                        "summary.json").read_text())
-    v02.append((deep["floor"] * 100, deep["frontier"][-1][1] * 100))
-    ax.scatter([p[0] for p in v02], [p[1] for p in v02], s=56, marker="D",
-               color=RED, edgecolor="white", linewidth=0.8, zorder=5,
-               label="excise (automatic floors)")
-    ax.annotate("found automatically, one\nlabel-free run: 0.7–1.2%\n"
-                "at 91% — still descending", xy=(0.73, 90.3),
-                xytext=(1.05, 52), fontsize=7.2, color=RED, ha="left",
-                arrowprops=dict(arrowstyle="-", color=RED, lw=0.7,
-                                shrinkB=5))
+    v02_x = sum(p[0] for p in v02_runs) / len(v02_runs)
+    v02_y = sum(p[1] for p in v02_runs) / len(v02_runs)
+    v02_min = min(p[1] for p in v02_runs)
+    v02_max = max(p[1] for p in v02_runs)
+    deep_pt = (deep["floor"] * 100, deep["frontier"][-1][1] * 100)
+    old_pt = (7.6, 89.0)
+    prism_pt = (5.05, 91.33)
+
     ax.set_xscale("log")
-    ax.set_xticks([0.7, 1.2, 2, 5, 10, 20, 50, 100])
-    ax.set_xticklabels(["0.7", "1.2", "2", "5", "10", "20", "50", "100"])
-    ax.set_xlabel("MLP channels kept (%)")
-    ax.set_ylabel("fidelity (%)")
-    ax.set_xlim(0.6, 120)
-    ax.set_ylim(0, 112)
-    ax.axhline(100, color=LGRAY, lw=0.7, ls=":", zorder=1)
-    ax.legend(loc="lower right", frameon=False)
+    ax.set_xlim(0.6, 9.0)
+    ax.set_ylim(88.0, 92.7)
+    ax.set_xticks([0.7, 1.2, 2, 5, 8])
+    ax.set_xticklabels(["0.7", "1.2", "2", "5", "8"])
+    ax.set_yticks([88, 89, 90, 91, 92])
+    ax.axvspan(0.65, 1.3, color=EXCISE_LIGHT, zorder=0)
+    ax.text(0.82, 92.35, "around 1%", color=EXCISE_DARK,
+            fontsize=6.9, ha="center")
+    ax.add_patch(FancyArrowPatch(
+        old_pt, (v02_x, v02_y), arrowstyle="-|>", mutation_scale=12,
+        lw=1.55, color=RED, shrinkA=9, shrinkB=12,
+        connectionstyle="arc3,rad=0.08", zorder=2))
+    ax.scatter([old_pt[0]], [old_pt[1]], s=76, color=CONTROL,
+               edgecolor="white", linewidth=1.0, zorder=5)
+    ax.scatter([v02_x], [v02_y], s=86, marker="D", color=RED,
+               edgecolor="white", linewidth=1.0, zorder=6)
+    ax.scatter([deep_pt[0]], [deep_pt[1]], s=76, marker="D",
+               color=EXCISE_DARK, edgecolor="white", linewidth=1.0, zorder=7)
+    ax.scatter([prism_pt[0]], [prism_pt[1]], s=48, marker="s",
+               facecolor="white", edgecolor=PRISM, linewidth=1.15, zorder=5)
+
+    ax.text(6.35, 90.25, "v0.1\n7.6%, 89.0%", ha="center", va="center",
+            fontsize=6.9, color=CONTROL)
+    ax.annotate(f"v0.2 aggregate\n1.2%, {v02_y:.1f}%",
+                (v02_x, v02_y), xytext=(17, 9), textcoords="offset points",
+                ha="left", va="bottom", fontsize=7.0, color=RED)
+    ax.annotate("extended\n0.71%, 91.1%", deep_pt, xytext=(11, -22),
+                textcoords="offset points", ha="left", va="top",
+                fontsize=6.6, color=EXCISE_DARK)
+    ax.annotate("PRISM\n~5%", prism_pt, xytext=(18, 9),
+                textcoords="offset points", ha="left", va="bottom",
+                fontsize=6.6, color=PRISM)
+    ax.text(2.45, 89.55, "6.3x lower floor\nwith higher recovery",
+            fontsize=7.2, color=INK, ha="left", va="center")
+    ax.set_xlabel("MLP channels kept at controller exit, % (log scale)",
+                  labelpad=5)
+    ax.set_ylabel("held-out verbatim self-match (%)", labelpad=5)
+
+    tab.axis("off")
+    tab.set_xlim(0, 1)
+    tab.set_ylim(0, 1)
+    rows = [
+        ("floor", "7.6%", "1.2%", "6.3x lower", RED),
+        ("held-out self-match", "89.0%",
+         f"{v02_min:.1f}-{v02_max:.1f}%", "+2.5 pts mean", RED),
+        ("physical export", "0.48B", "0.17B",
+         "2.8x fewer parameters", EXCISE_DARK),
+    ]
+    for y, (name, old, new, note, color) in zip([0.76, 0.47, 0.18], rows):
+        tab.plot([0.0, 1.0], [y - 0.13, y - 0.13], color=GRID, lw=0.7)
+        tab.text(0.02, y, name, ha="left", va="center", fontsize=7.35,
+                 color=INK, weight="bold")
+        tab.text(0.40, y, old, ha="right", va="center", fontsize=8.0,
+                 color=CONTROL)
+        tab.text(0.49, y, r"$\rightarrow$", ha="center", va="center",
+                 fontsize=9.0, color=MUTED)
+        tab.text(0.56, y, new, ha="left", va="center", fontsize=8.55,
+                 color=color, weight="bold")
+        tab.text(0.98, y, note, ha="right", va="center", fontsize=7.05,
+                 color=MUTED)
     save(fig, "frontier")
 
 

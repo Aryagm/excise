@@ -96,15 +96,14 @@ model away from the base it is meant to anchor.
 
 \begin{figure}[b!]
 \centering
-\includegraphics[width=0.54\textwidth]{figures/frontier.pdf}
+\includegraphics[width=0.66\textwidth]{figures/frontier.pdf}
 \caption{\textbf{Two-digit addition runs on 0.7--1.2\% of MLP channels, found
-automatically in one label-free run.} Qwen2.5-Math-1.5B. Red diamonds are
-\texttt{excise}'s controller stopping points: three configured lower-bound
-exits at 1.2\% of channels and one extended step-cap exit at 0.71\%, plotted
-by held-out verbatim self-match, a stricter metric that lower-bounds
-recovery. Gray squares are PRISM's staged pipeline as reported
-\citep{prism2026} (recovery, task accuracy), shown for reference. Caveats in
-\S\ref{sec:honest}.}
+automatically in one label-free run.} Qwen2.5-Math-1.5B. The red aggregate
+marker summarizes three configured lower-bound exits at 1.2\% of channels
+(91.0--92.0\% held-out verbatim self-match); the dark red marker is the
+extended step-cap exit at 0.71\%. The x-axis is log-scaled. The blue PRISM
+point is the reported staged-pipeline reference \citep{prism2026} (task
+accuracy), shown for context; caveats in \S\ref{sec:honest}.}
 \label{fig:frontier}
 \end{figure}
 
